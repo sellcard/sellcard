@@ -1,0 +1,3787 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell Card - Plateforme</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.cinetpay.com/cdn/js/cinetpay.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background-color: #FFFFFF;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #002366 50%, #FFFFFF 50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease-out;
+        }
+        .wave {
+            position: absolute;
+            top: 45%;
+            width: 100%;
+            height: 100px;
+            fill: #002366;
+            animation: breathe 3s infinite ease-in-out;
+        }
+        .logo-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+        .letter {
+            font-size: 80px;
+            font-weight: bold;
+            color: #FFFFFF;
+            display: none;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+        .brand-name {
+            color: #002366;
+            font-size: 32px;
+            font-weight: 800;
+            opacity: 0;
+            margin-top: 20px;
+        }
+        .notice {
+            color: #646464;
+            font-size: 14px;
+            opacity: 0;
+            margin-top: 5px;
+        }
+        .footer-security {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            animation: fadeIn 1s forwards 4s;
+        }
+        .cadenas-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #000;
+            border-radius: 4px;
+            position: relative;
+        }
+        .cadenas-icon::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 3px;
+            width: 10px;
+            height: 10px;
+            border: 2px solid #000;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+        }
+        .anonyme-text {
+            font-size: 12px;
+            color: #000;
+            font-weight: 500;
+        }
+        @keyframes bounceIn {
+            0% { transform: translateY(100px); opacity: 0; }
+            60% { transform: translateY(-10px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.1); }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        #form-container {
+            width: 100%;
+            max-width: 420px;
+            margin: 20px auto;
+            padding: 30px;
+            text-align: center;
+            background: #FFFFFF;
+            border-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .brand-title {
+            color: #002366;
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+        .brand-slogan {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 40px;
+        }
+        .language-selector {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        #lang-select {
+            padding: 8px 15px;
+            border-radius: 30px;
+            border: 2px solid #F0F2F5;
+            background: #F8F9FA;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+        .input-group {
+            text-align: left;
+            margin-bottom: 25px;
+        }
+        .input-group label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #002366;
+            margin-left: 15px;
+            text-transform: uppercase;
+        }
+        .one-ui-select {
+            width: 100%;
+            padding: 18px 25px;
+            border-radius: 30px;
+            border: 2px solid #F0F2F5;
+            background-color: #F8F9FA;
+            font-size: 16px;
+            color: #333;
+            margin-top: 10px;
+            outline: none;
+            transition: 0.3s;
+        }
+        .one-ui-select:focus {
+            border-color: #002366;
+            background-color: #FFF;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            font-size: 13px;
+            color: #444;
+        }
+        .one-ui-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #002366;
+        }
+        .google-login-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 30px;
+            border: 1px solid #DADCE0;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .google-login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+        .security-footer {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .line-lock {
+            width: 35px;
+            height: 35px;
+            fill: none;
+            stroke: #000;
+            stroke-width: 1.5;
+        }
+        .security-footer p {
+            font-size: 11px;
+            font-weight: 700;
+            color: #000;
+            max-width: 200px;
+        }
+
+        #dashboard-container {
+            display: none;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+        .phone-container {
+            width: 350px;
+            height: 700px;
+            background: white;
+            border-radius: 50px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+        .wave-blue {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 35%; 
+            background-color: #002366;
+            border-bottom-left-radius: 80px;
+            border-bottom-right-radius: 80px;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 0 20px 20px 20px;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px; 
+            position: relative;
+        }
+        .btn-action {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(0, 35, 102, 0.5);
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+            color: #002366;
+            gap: 4px;
+            position: relative;
+        }
+        .btn-action:active { transform: scale(0.92); background: rgba(0, 35, 102, 0.1); }
+        .btn-label { font-size: 8px; font-weight: bold; text-transform: uppercase; }
+        .btn-top { border-color: rgba(255,255,255,0.7); color: white; }
+        .app-title { color: white; font-weight: bold; font-size: 1.2rem; text-transform: uppercase; }
+        .notification-dot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 10px;
+            height: 10px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: none;
+            animation: blink 1s infinite;
+        }
+        .notification-dot.active { display: block; }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .balance-box { text-align: center; color: white; margin: 15px 0; }
+        .money { font-size: 28px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .id-badge {
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+            display: inline-block;
+            min-width: 100px;
+        }
+        .cards-area { flex-grow: 1; margin-top: 30px; display: flex; flex-direction: column; overflow-y: auto; }
+        .footer-nav { display: flex; justify-content: space-between; padding: 15px 0; border-top: 1px solid #eee; }
+        .icon-size { stroke-width: 2px; width: 20px; height: 20px; }
+
+        .settings-menu, .notifications-menu, .payment-menu, .withdraw-menu, .history-menu, .recharge-menu, .orders-menu, .sell-menu, .buy-menu, .parrainage-menu, .conditions-menu, .faq-modal {
+            position: fixed;
+            background: white;
+            z-index: 2000;
+            transition: all 0.3s ease-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        .settings-menu {
+            top: 0;
+            left: -100%;
+            width: 320px;
+            height: 100vh;
+            border-radius: 0 30px 30px 0;
+        }
+        .settings-menu.active { left: 0; }
+        .settings-header {
+            background: #002366;
+            padding: 60px 20px 30px 20px;
+            color: white;
+            border-radius: 0 0 30px 0;
+        }
+        .settings-header h2 { font-size: 24px; margin-bottom: 5px; }
+        .settings-section { padding: 20px; border-bottom: 1px solid #f0f0f0; }
+        .settings-section h3 { color: #002366; font-size: 14px; margin-bottom: 15px; text-transform: uppercase; }
+        .profile-preview { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .profile-preview img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #002366; }
+        .profile-info p { margin: 3px 0; font-size: 14px; }
+        .profile-info .email { color: #666; font-size: 12px; }
+        .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-item-left { display: flex; align-items: center; gap: 15px; }
+        .settings-item-left i { color: #002366; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #002366; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .language-select { width: 150px; padding: 8px; border-radius: 15px; border: 1px solid #ddd; }
+        .close-menu { position: absolute; top: 20px; right: 20px; color: white; cursor: pointer; }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+            display: none;
+        }
+        .overlay.active { display: block; }
+        .contact-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+        .disclaimer { font-size: 11px; color: #666; padding: 15px 0; line-height: 1.5; }
+
+        .notifications-menu {
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 70vh;
+            border-radius: 0 0 30px 30px;
+        }
+        .notifications-menu.active { top: 0; }
+        .notifications-header {
+            background: #002366;
+            padding: 60px 20px 30px 20px;
+            color: white;
+            border-radius: 0 0 30px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notifications-header h2 { font-size: 24px; margin-bottom: 0; }
+        .close-notifications { color: white; cursor: pointer; }
+        .notifications-list { padding: 20px; }
+        .notification-item { padding: 15px; border-bottom: 1px solid #f0f0f0; display: flex; gap: 15px; align-items: flex-start; }
+        .notification-item.unread { background-color: #f0f7ff; }
+        .notification-icon { width: 40px; height: 40px; border-radius: 50%; background: #e6f0ff; display: flex; align-items: center; justify-content: center; color: #002366; }
+        .notification-content { flex: 1; }
+        .notification-title { font-weight: bold; margin-bottom: 5px; }
+        .notification-time { font-size: 11px; color: #888; }
+        .notification-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 5px; }
+        .status-success { background: #e6ffe6; color: #00aa00; }
+        .status-pending { background: #fff3e6; color: #ff8800; }
+        .status-failed { background: #ffe6e6; color: #ff4444; }
+        .status-promo { background: #e6f0ff; color: #002366; }
+        .empty-notifications { text-align: center; padding: 50px 20px; color: #888; }
+
+        .payment-menu, .withdraw-menu, .history-menu, .recharge-menu, .orders-menu, .sell-menu, .buy-menu, .parrainage-menu, .conditions-menu, .faq-modal {
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 80vh;
+            border-radius: 30px 30px 0 0;
+        }
+        .payment-menu.active, .withdraw-menu.active, .history-menu.active, .recharge-menu.active, .orders-menu.active, .sell-menu.active, .buy-menu.active, .parrainage-menu.active, .conditions-menu.active, .faq-modal.active { bottom: 0; }
+        .payment-header, .withdraw-header, .history-header, .recharge-header, .orders-header, .sell-header, .buy-header, .parrainage-header, .conditions-header, .faq-header {
+            background: #002366;
+            padding: 30px 20px;
+            color: white;
+            border-radius: 30px 30px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .payment-header h2, .withdraw-header h2, .history-header h2, .recharge-header h2, .orders-header h2, .sell-header h2, .buy-header h2, .parrainage-header h2, .conditions-header h2, .faq-header h2 { font-size: 24px; margin: 0; }
+        .close-payment, .close-withdraw, .close-history, .close-recharge, .close-orders, .close-sell, .close-buy, .close-parrainage, .close-conditions, .close-faq { color: white; cursor: pointer; }
+        .payment-content, .withdraw-content, .history-content, .recharge-content, .orders-content, .sell-content, .buy-content, .parrainage-content, .conditions-content, .faq-content { padding: 20px; }
+        .payment-methods-list, .withdraw-methods-list { margin-bottom: 20px; }
+        .payment-method-item, .withdraw-method-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 10px;
+        }
+        .withdraw-method-item { cursor: pointer; border: 2px solid transparent; }
+        .withdraw-method-item.selected { border-color: #002366; background: #e6f0ff; }
+        .payment-method-icon, .withdraw-method-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e6f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #002366;
+        }
+        .payment-method-details, .withdraw-method-details { flex: 1; }
+        .payment-method-name, .withdraw-method-name { font-weight: bold; }
+        .payment-method-number, .withdraw-method-number { font-size: 12px; color: #666; }
+        .add-payment-btn {
+            width: 100%;
+            padding: 15px;
+            background: #002366;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .add-payment-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+        .add-payment-form h3 { color: #002366; margin-bottom: 15px; }
+        .payment-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .payment-type-option {
+            flex: 1 0 calc(25% - 10px);
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .payment-type-option.selected {
+            border-color: #002366;
+            background: #e6f0ff;
+        }
+        .payment-type-option i { display: block; margin-bottom: 5px; color: #002366; }
+        .payment-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        .save-payment-btn {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        .withdraw-amount input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .withdraw-btn {
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .withdraw-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .history-list, .orders-list { margin-top: 20px; }
+        .history-item, .order-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 10px;
+        }
+        .history-icon, .order-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e6f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #002366;
+        }
+        .history-details, .order-details { flex: 1; }
+        .history-title, .order-title { font-weight: bold; }
+        .history-subtitle, .order-subtitle { font-size: 12px; color: #666; }
+        .history-amount, .order-amount { font-weight: bold; color: #00aa00; }
+        .history-date, .order-date { font-size: 11px; color: #888; }
+        .empty-history, .empty-orders { text-align: center; padding: 50px 20px; color: #888; }
+
+        .order-status {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .status-approved { background: #e6ffe6; color: #00aa00; }
+        .status-rejected { background: #ffe6e6; color: #ff4444; }
+        .status-pending { background: #fff3e6; color: #ff8800; }
+
+        .recharge-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .recharge-tab {
+            flex: 1;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .recharge-tab.active {
+            border-color: #002366;
+            background: #e6f0ff;
+            color: #002366;
+        }
+        .recharge-option { display: none; }
+        .recharge-option.active { display: block; }
+        .recharge-methods-list { margin: 15px 0; max-height: 150px; overflow-y: auto; }
+        .recharge-method-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .recharge-method-item.selected { border-color: #002366; background: #e6f0ff; }
+        .recharge-method-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #e6f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #002366;
+        }
+        .recharge-field { margin-bottom: 15px; }
+        .recharge-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #002366;
+            margin-bottom: 5px;
+        }
+        .recharge-field input, .recharge-field textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+        }
+        .recharge-field textarea { height: 60px; resize: none; }
+        .recharge-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .recharge-checkbox input { width: 18px; height: 18px; accent-color: #002366; }
+        .recharge-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            font-size: 11px;
+            margin-bottom: 15px;
+            color: #856404;
+        }
+        .recharge-btn {
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .recharge-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .popular-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .popular-card {
+            background: #F8F9FA;
+            border-radius: 24px;
+            padding: 15px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .popular-card:hover { background: #e9ecef; }
+        .popular-card img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; }
+        .popular-card .card-name { font-size: 12px; font-weight: 600; color: #333; }
+        .popular-card .card-rate { font-size: 11px; color: #28a745; font-weight: 500; }
+        .popular-card .card-rate span { color: #666; }
+
+        .other-cards-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 70vh;
+            background: white;
+            z-index: 4000;
+            transition: bottom 0.3s ease-out;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+            border-radius: 30px 30px 0 0;
+            overflow-y: auto;
+        }
+        .other-cards-sheet.active { bottom: 0; }
+        .sheet-header {
+            background: #002366;
+            padding: 20px;
+            color: white;
+            border-radius: 30px 30px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sheet-header h3 { margin: 0; }
+        .close-sheet { cursor: pointer; }
+        .sheet-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .other-card-item {
+            background: #F8F9FA;
+            border-radius: 20px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .other-card-item img { width: 30px; height: 30px; margin-bottom: 5px; }
+        .overlay-sheet {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 3999;
+            display: none;
+        }
+        .overlay-sheet.active { display: block; }
+
+        .sell-catalog {
+            max-height: 50vh;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .sell-card-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .sell-card-item.selected {
+            border-color: #002366;
+            background: #e6f0ff;
+        }
+        .sell-card-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .sell-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e6f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #002366;
+        }
+        .sell-card-info { flex: 1; }
+        .sell-card-name { font-weight: bold; }
+        .sell-card-rate { font-size: 12px; color: #28a745; }
+        .sell-card-rate span { color: #666; }
+        .sell-card-currency { font-size: 11px; color: #888; }
+        .sell-form { margin-top: 15px; }
+        .sell-field { margin-bottom: 15px; }
+        .sell-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #002366;
+            margin-bottom: 5px;
+        }
+        .sell-field input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+        .sell-field input[type="file"] { padding: 8px; }
+        .sell-calc {
+            background: #e6f0ff;
+            padding: 10px;
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .sell-submit {
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .sell-submit:disabled { background: #ccc; cursor: not-allowed; }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .buy-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .buy-option-btn {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .buy-option-btn:hover {
+            border-color: #002366;
+            background: #e6f0ff;
+        }
+        .buy-option-btn i {
+            width: 30px;
+            height: 30px;
+            color: #002366;
+        }
+        .buy-option-btn h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: #002366;
+        }
+        .buy-option-btn p {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .buy-header-icons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .buy-search {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .buy-search input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #F0F2F5;
+            border-radius: 30px;
+            background: #F8F9FA;
+            font-size: 14px;
+            outline: none;
+        }
+        .buy-search input:focus {
+            border-color: #002366;
+        }
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .buy-catalog {
+            max-height: 50vh;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .buy-product-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            border: 2px solid transparent;
+        }
+        .buy-product-info { flex: 1; }
+        .buy-product-name { font-weight: bold; }
+        .buy-product-details { font-size: 12px; color: #666; }
+        .buy-product-price { font-size: 12px; color: #28a745; font-weight: 500; }
+        .buy-product-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .add-to-cart-btn {
+            background: #002366;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .quantity-select {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .cart-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 20px;
+        }
+        .cart-panel h3 {
+            color: #002366;
+            margin-bottom: 15px;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-total {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 15px 0;
+            text-align: right;
+        }
+        .cart-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .cart-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .checkout-btn {
+            background: #28a745;
+            color: white;
+        }
+        .clear-cart-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .buy-detail, .gift-detail, .request-detail {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 20px;
+        }
+        .buy-detail h3, .gift-detail h3, .request-detail h3 {
+            color: #002366;
+            margin-bottom: 10px;
+        }
+        .buy-detail p, .gift-detail p, .request-detail p {
+            margin-bottom: 5px;
+        }
+        .buy-detail button, .gift-detail button, .request-detail button {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .gift-field {
+            margin-bottom: 15px;
+        }
+        .gift-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #002366;
+            margin-bottom: 5px;
+        }
+        .gift-field input, .gift-field textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+        }
+        .gift-field textarea {
+            height: 80px;
+            resize: none;
+        }
+        .request-link {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            padding: 15px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .request-link span {
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .copy-link-btn {
+            background: #002366;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .gift-received {
+            border-left: 4px solid #ffc107;
+            background: #fff9e6;
+        }
+        .gift-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .gift-action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .gift-action-btn.show {
+            background: #28a745;
+            color: white;
+        }
+        .gift-action-btn.cash {
+            background: #002366;
+            color: white;
+        }
+
+        .recharge-source-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .recharge-source-option {
+            flex: 1;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .recharge-source-option.active {
+            border-color: #002366;
+            background: #e6f0ff;
+            color: #002366;
+        }
+        .recharge-calc {
+            background: #e6f0ff;
+            padding: 10px;
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        #searchInput {
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 2px solid #F0F2F5;
+            background: #F8F9FA;
+            outline: none;
+            transition: 0.3s;
+            width: 0;
+            opacity: 0;
+            transition: width 0.3s, opacity 0.3s;
+        }
+        #searchInput.visible {
+            width: 150px;
+            opacity: 1;
+        }
+        #searchInput:focus {
+            border-color: #002366;
+        }
+        .clear-search {
+            cursor: pointer;
+            color: #666;
+            display: none;
+        }
+        .clear-search.visible {
+            display: inline;
+        }
+
+        .contact-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .contact-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 30px;
+            border: 2px solid #002366;
+            background: white;
+            color: #002366;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .contact-btn:hover {
+            background: #e6f0ff;
+        }
+
+        .parrainage-stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .parrainage-stats .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            flex: 1;
+            text-align: center;
+        }
+        .parrainage-stats .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #002366;
+        }
+        .parrainage-stats .stat-label {
+            font-size: 11px;
+            color: #666;
+        }
+        .parrainage-code-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        .parrainage-code-section h3 {
+            color: #002366;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .code-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+        }
+        #codeValue {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #002366;
+        }
+        .code-info {
+            font-size: 12px;
+            color: #666;
+        }
+        .filleuls-list h3 {
+            color: #002366;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .empty-filleuls {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
+        .empty-filleuls p {
+            margin: 10px 0;
+        }
+        .empty-filleuls .small {
+            font-size: 12px;
+        }
+        .filleul-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 10px;
+        }
+        .filleul-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e6f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #002366;
+        }
+        .filleul-info {
+            flex: 1;
+        }
+        .filleul-name {
+            font-weight: bold;
+        }
+        .filleul-email {
+            font-size: 12px;
+            color: #666;
+        }
+        .filleul-stats {
+            font-size: 12px;
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .conditions-content {
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .conditions-content h2 {
+            color: #002366;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .conditions-content h3 {
+            color: #002366;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .conditions-content p {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .conditions-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .faq-modal {
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 80vh;
+            background: #f2f4f7;
+            z-index: 5000;
+            border-radius: 30px 30px 0 0;
+            overflow-y: auto;
+        }
+        .faq-modal.active { bottom: 0; }
+        .faq-header {
+            background: #002366;
+            padding: 30px 20px;
+            color: white;
+            border-radius: 30px 30px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .faq-header h2 { font-size: 24px; margin: 0; }
+        .close-faq { color: white; cursor: pointer; }
+        .faq-content {
+            padding: 20px;
+            background: #f2f4f7;
+        }
+        .faq-card {
+            background: white;
+            border-radius: 24px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .faq-question {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .faq-question i { color: #002366; stroke-width: 2px; width: 20px; height: 20px; }
+        .faq-answer {
+            padding: 0 20px 24px 54px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #8e8e93;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .faq-card.active .faq-answer { display: block; }
+        .faq-card.active { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN (animation) -->
+<div id="splash-screen">
+    <svg class="wave" viewBox="0 0 1440 320"><path d="M0,192L120,202.7C240,213,480,235,720,229.3C960,224,1200,192,1320,176L1440,160L1440,0L1320,0C1200,0,960,0,720,0C480,0,240,0,120,0L0,0Z"></path></svg>
+    <div class="logo-container">
+        <div id="letter-s" class="letter">S</div>
+        <div id="letter-c" class="letter">C</div>
+        <div id="full-logo" class="letter">SC</div>
+        <h1 id="brand-title" class="brand-name">SELL CARD</h1>
+        <p id="brand-notice" class="notice">Vente et achat de cartes, transfert d'argent</p>
+    </div>
+    <div class="footer-security">
+        <div class="cadenas-icon"></div>
+        <span class="anonyme-text">Transactions 100% anonymes</span>
+    </div>
+</div>
+
+<!-- FORMULAIRE D'INSCRIPTION -->
+<div id="form-container">
+    <div class="language-selector">
+        <select id="lang-select">
+            <option value="fr" selected>Français</option>
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="es">Español</option>
+            <option value="pt">Português</option>
+        </select>
+    </div>
+    <h1 class="brand-title" id="dynamic-title">SELL CARD</h1>
+    <p class="brand-slogan" id="dynamic-slogan">Vente et achat de cartes, transfert d'argent</p>
+
+    <div class="input-group">
+        <label for="parrainCode">Code de parrainage (optionnel)</label>
+        <input type="text" id="parrainCode" class="one-ui-select" placeholder="SC-XXXXXXXXXXXX">
+    </div>
+
+    <div class="input-group">
+        <label for="country-select" id="country-label">Sélectionnez votre pays (Langue & Monnaie)</label>
+        <select id="country-select" class="one-ui-select">
+            <option value="" disabled selected>Choisir un pays...</option>
+            <optgroup label="I. AFRIQUE (ZONE FCFA - UEMOA)">
+                <option value="CI">Côte d'Ivoire (Franc CFA - XOF)</option>
+                <option value="SN">Sénégal (Franc CFA - XOF)</option>
+                <option value="ML">Mali (Franc CFA - XOF)</option>
+                <option value="BF">Burkina Faso (Franc CFA - XOF)</option>
+                <option value="BJ">Bénin (Franc CFA - XOF)</option>
+                <option value="TG">Togo (Franc CFA - XOF)</option>
+                <option value="GW">Guinée-Bissau (Franc CFA - XOF)</option>
+                <option value="NE">Niger (Franc CFA - XOF)</option>
+            </optgroup>
+            <optgroup label="II. AFRIQUE (ZONE FCFA - CEMAC)">
+                <option value="CM">Cameroun (Franc CFA - XAF)</option>
+                <option value="GA">Gabon (Franc CFA - XAF)</option>
+                <option value="CG">Congo (Brazzaville) (Franc CFA - XAF)</option>
+                <option value="TD">Tchad (Franc CFA - XAF)</option>
+                <option value="CF">Centrafrique (Franc CFA - XAF)</option>
+                <option value="GQ">Guinée Équatoriale (Franc CFA - XAF)</option>
+            </optgroup>
+            <optgroup label="III. AFRIQUE (AUTRES DEVISES)">
+                <option value="GN">Guinée (Franc Guinéen - GNF)</option>
+                <option value="MA">Maroc (Dirham - MAD)</option>
+                <option value="DZ">Algérie (Dinar - DZD)</option>
+                <option value="TN">Tunisie (Dinar - TND)</option>
+                <option value="CD">RDC (Congo Kinshasa) (Franc Congolais - CDF)</option>
+                <option value="GH">Ghana (Cedi - GHS)</option>
+                <option value="NG">Nigeria (Naira - NGN)</option>
+            </optgroup>
+            <optgroup label="IV. EUROPE (ZONE EURO & AUTRES)">
+                <option value="FR">France (Euro - EUR)</option>
+                <option value="BE">Belgique (Euro - EUR)</option>
+                <option value="CH">Suisse (Franc Suisse - CHF)</option>
+                <option value="DE">Allemagne (Euro - EUR)</option>
+                <option value="IT">Italie (Euro - EUR)</option>
+                <option value="ES">Espagne (Euro - EUR)</option>
+                <option value="LU">Luxembourg (Euro - EUR)</option>
+            </optgroup>
+            <optgroup label="V. MOYEN-ORIENT & ASIE">
+                <option value="BH">Bahreïn (Dinar Bahreïni - BHD)</option>
+                <option value="AE">Émirats Arabes Unis (Dirham - AED)</option>
+                <option value="SA">Arabie Saoudite (Riyal - SAR)</option>
+                <option value="QA">Qatar (Riyal - QAR)</option>
+                <option value="CN">Chine (Yuan - CNY)</option>
+                <option value="TR">Turquie (Lire - TRY)</option>
+            </optgroup>
+            <optgroup label="VI. AMÉRIQUE">
+                <option value="US">États-Unis (Dollar - USD)</option>
+                <option value="CA">Canada (Dollar Canadien - CAD)</option>
+                <option value="BR">Brésil (Réal - BRL)</option>
+            </optgroup>
+        </select>
+    </div>
+
+    <div class="checkbox-container">
+        <input type="checkbox" id="terms-check" class="one-ui-checkbox">
+        <label for="terms-check" id="terms-label">J'accepte les conditions d'utilisation de Sell Card</label>
+    </div>
+
+    <button id="google-auth-btn" class="google-login-btn" disabled>
+        <img src="https://i.supaimg.com/ea4468b1-fe88-41fc-8e3b-2c3f403b206f/2721f55a-201e-452b-84dd-d3e768e95ec9.jpg" alt="Google" width="20" height="20">
+        <span id="google-btn-text">Continuer avec Google</span>
+    </button>
+
+    <div class="security-footer">
+        <svg class="line-lock" viewBox="0 0 24 24">
+            <path d="M12 11V15M7 10V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V10M5 10H19C20.1046 10 21 10.8954 21 12V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V12C3 10.8954 3.89543 10 5 10Z" />
+        </svg>
+        <p id="security-text">Toute transaction chez Sell Card est 100% anonyme</p>
+    </div>
+</div>
+
+<!-- DASHBOARD (interface principale) -->
+<div id="dashboard-container">
+    <div class="phone-container">
+        <div class="wave-blue"></div>
+        <div class="content">
+            <div class="header-top">
+                <div class="btn-action btn-top" style="width:45px; height:45px;" id="menuButton">
+                    <i data-lucide="menu" class="icon-size"></i>
+                </div>
+                <div class="app-title">Sell Card</div>
+                <div class="btn-action btn-top" style="width:45px; height:45px;" id="notificationsButton">
+                    <i data-lucide="bell" class="icon-size"></i>
+                    <span class="notification-dot" id="notificationDot"></span>
+                </div>
+            </div>
+
+            <div class="balance-box">
+                <div class="money">
+                    <span id="balance-value">Chargement...</span>
+                    <i data-lucide="eye" id="toggle-visibility" style="cursor:pointer;"></i>
+                </div>
+                <p style="font-size: 10px; opacity: 0.8; margin: 5px 0;">Solde disponible</p>
+                <div class="id-badge" id="user-id-public">ID: ...</div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:35px;">
+                <div class="btn-action" style="width:75px; height:55px;" id="withdrawButton">
+                    <i data-lucide="wallet" class="icon-size"></i><span class="btn-label">Retirer</span>
+                </div>
+                <div class="btn-action" style="width:75px; height:55px;" id="accountButton">
+                    <i data-lucide="user" class="icon-size"></i><span class="btn-label">Compte</span>
+                </div>
+                <div class="btn-action" style="width:75px; height:55px;" id="rechargeButton">
+                    <i data-lucide="refresh-cw" class="icon-size"></i><span class="btn-label">Recharger</span>
+                </div>
+            </div>
+
+            <div class="cards-area">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-weight: bold; color: #333;">Ventes Populaires</span>
+                    <div class="search-container">
+                        <div class="btn-action" style="padding:5px 12px; border-radius:20px;" id="historyButton">
+                            <span class="btn-label" style="font-size:10px;">historique</span>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="Rechercher...">
+                        <div class="btn-action" style="padding:5px 12px; border-radius:20px;" id="searchButton">
+                            <i data-lucide="search" class="icon-size"></i>
+                        </div>
+                        <span id="clearSearch" class="clear-search">✕</span>
+                    </div>
+                </div>
+                <div class="popular-grid" id="popularGrid">
+                    <!-- Généré dynamiquement -->
+                </div>
+            </div>
+
+            <div class="footer-nav">
+                <div class="btn-action" style="width:75px; height:60px; border:none; background:none;" id="homeButton">
+                    <i data-lucide="home" class="icon-size"></i><span class="btn-label">Accueil</span>
+                </div>
+                <div class="btn-action" style="width:75px; height:60px; border:none; background:none;" id="sellButton">
+                    <i data-lucide="plus-circle" class="icon-size" style="color:#002366; width:30px; height:30px;"></i><span class="btn-label">Vendre</span>
+                </div>
+                <div class="btn-action" style="width:75px; height:60px; border:none; background:none;" id="buyButton">
+                    <i data-lucide="shopping-cart" class="icon-size" style="color:#002366; width:30px; height:30px;"></i><span class="btn-label">Acheter</span>
+                </div>
+                <div class="btn-action" style="width:75px; height:60px; border:none; background:none;" id="ordersButton">
+                    <i data-lucide="list-checks" class="icon-size"></i><span class="btn-label">Commande</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tous les menus glissants (cachés) -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Menu paramètres (inchangé) -->
+    <div class="settings-menu" id="settingsMenu">
+        <div class="settings-header">
+            <i data-lucide="x" class="close-menu" id="closeMenu"></i>
+            <h2>Paramètres</h2>
+        </div>
+        <div class="settings-section">
+            <h3>Mon compte</h3>
+            <div class="profile-preview">
+                <img src="https://via.placeholder.com/60" alt="Photo de profil" id="profilePic">
+                <div class="profile-info">
+                    <p id="profileName">Chargement...</p>
+                    <p class="email" id="profileEmail">xxxxxxxxxx</p>
+                </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-left">
+                    <i data-lucide="camera"></i>
+                    <span>Modifier la photo</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3>Réglages</h3>
+            <div class="settings-item">
+                <div class="settings-item-left">
+                    <i data-lucide="moon"></i>
+                    <span>Thème sombre</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="themeSwitch">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-left">
+                    <i data-lucide="globe"></i>
+                    <span>Langue</span>
+                </div>
+                <select class="language-select" id="langSelect">
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="pt">Português</option>
+                    <option value="ar">العربية</option>
+                    <option value="zh">中文</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="ru">Русский</option>
+                    <option value="de">Deutsch</option>
+                    <option value="it">Italiano</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="pl">Polski</option>
+                </select>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-left">
+                    <i data-lucide="key"></i>
+                    <span>Changer mot de passe</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-left">
+                    <i data-lucide="lock"></i>
+                    <span>Verrouillage par code PIN</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3>Parrainage</h3>
+            <div class="settings-item" id="parrainageButton">
+                <div class="settings-item-left">
+                    <i data-lucide="gift"></i>
+                    <span>Mes filleuls et récompenses</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3>À propos</h3>
+            <div class="contact-item">
+                <i data-lucide="message-circle"></i>
+                <span>WhatsApp: <strong>xxxxxxxxxx</strong></span>
+            </div>
+            <div class="contact-item">
+                <i data-lucide="mail"></i>
+                <span>Email: <strong>xxxxxxxxxx</strong></span>
+            </div>
+            <div class="contact-buttons">
+                <button id="whatsappBtn" class="contact-btn">
+                    <i data-lucide="message-circle"></i> WhatsApp
+                </button>
+                <button id="gmailBtn" class="contact-btn">
+                    <i data-lucide="mail"></i> Gmail
+                </button>
+            </div>
+            <div class="settings-item" id="faqButton">
+                <div class="settings-item-left">
+                    <i data-lucide="help-circle"></i>
+                    <span>FAQ & Assistance</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+            <div class="settings-item" id="conditionsButton">
+                <div class="settings-item-left">
+                    <i data-lucide="file-text"></i>
+                    <span>Conditions générales</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-left">
+                    <i data-lucide="alert-triangle"></i>
+                    <span>Règles et conditions</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </div>
+            <div class="disclaimer">
+                ⚠️ Sell Card n'est pas responsable des transactions illégales effectuées via la plateforme. 
+                L'utilisateur s'engage à respecter les lois en vigueur dans son pays. 
+                Pour toute question, contactez-nous aux coordonnées ci-dessus. xxxxxxxxxx xxxxx
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu notifications -->
+    <div class="notifications-menu" id="notificationsMenu">
+        <div class="notifications-header">
+            <h2>Notifications</h2>
+            <i data-lucide="x" class="close-notifications" id="closeNotifications"></i>
+        </div>
+        <div class="notifications-list" id="notificationsList">
+            <div class="empty-notifications">
+                <i data-lucide="bell" style="width: 40px; height: 40px; color: #ccc; margin-bottom: 10px;"></i>
+                <p>Aucune notification pour le moment</p>
+                <p style="font-size: 11px;">Les alertes de transaction apparaîtront ici</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Moyens de paiement (compte) -->
+    <div class="payment-menu" id="paymentMenu">
+        <div class="payment-header">
+            <h2>Moyens de paiement</h2>
+            <i data-lucide="x" class="close-payment" id="closePayment"></i>
+        </div>
+        <div class="payment-content">
+            <div class="payment-methods-list" id="paymentMethodsList">
+                <p style="text-align:center; color:#999;">Chargement...</p>
+            </div>
+            <button class="add-payment-btn" id="showAddPaymentForm">
+                <i data-lucide="plus-circle"></i> Ajouter un moyen
+            </button>
+            <div class="add-payment-form" id="addPaymentForm" style="display: none;">
+                <h3>Ajouter un moyen</h3>
+                <div class="payment-type-selector" id="paymentTypeSelector">
+                    <div class="payment-type-option" data-type="mobile_money">
+                        <i data-lucide="smartphone"></i>
+                        <span>Mobile Money</span>
+                    </div>
+                    <div class="payment-type-option" data-type="wave">
+                        <i data-lucide="zap"></i>
+                        <span>Wave</span>
+                    </div>
+                    <div class="payment-type-option" data-type="carte">
+                        <i data-lucide="credit-card"></i>
+                        <span>Carte</span>
+                    </div>
+                    <div class="payment-type-option" data-type="paypal">
+                        <i data-lucide="paypal"></i>
+                        <span>PayPal</span>
+                    </div>
+                </div>
+                <input type="text" id="paymentNumber" class="payment-input" placeholder="Numéro / Email PayPal" required>
+                <button class="save-payment-btn" id="savePayment">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Retrait -->
+    <div class="withdraw-menu" id="withdrawMenu">
+        <div class="withdraw-header">
+            <h2>Retirer de l'argent</h2>
+            <i data-lucide="x" class="close-withdraw" id="closeWithdraw"></i>
+        </div>
+        <div class="withdraw-content">
+            <h3>Choisissez un moyen de retrait</h3>
+            <div class="withdraw-methods-list" id="withdrawMethodsList">
+                <p style="text-align:center; color:#999;">Chargement de vos moyens...</p>
+            </div>
+            <div class="withdraw-amount">
+                <input type="number" id="withdrawAmount" placeholder="Montant (FCFA)" min="100" step="100">
+            </div>
+            <button class="withdraw-btn" id="withdrawBtn" disabled>Retirer</button>
+            <p style="font-size: 11px; color:#888; margin-top:10px;">xxxxx Intégration CinetPay à venir xxxxx</p>
+        </div>
+    </div>
+    
+    <!-- Menu Historique -->
+    <div class="history-menu" id="historyMenu">
+        <div class="history-header">
+            <h2>Historique des transactions</h2>
+            <i data-lucide="x" class="close-history" id="closeHistory"></i>
+        </div>
+        <div class="history-content">
+            <div class="history-list" id="historyList">
+                <div class="empty-history">
+                    <i data-lucide="clock" style="width: 40px; height: 40px; color: #ccc; margin-bottom: 10px;"></i>
+                    <p>Aucune transaction approuvée pour le moment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Recharger -->
+    <div class="recharge-menu" id="rechargeMenu">
+        <div class="recharge-header">
+            <h2>Recharger</h2>
+            <i data-lucide="x" class="close-recharge" id="closeRecharge"></i>
+        </div>
+        <div class="recharge-content">
+            <div class="recharge-tabs">
+                <div class="recharge-tab active" data-target="self">Mon compte</div>
+                <div class="recharge-tab" data-target="friend">Un ami</div>
+            </div>
+            <!-- Option Mon compte -->
+            <div class="recharge-option active" id="rechargeSelf">
+                <div class="recharge-warning">
+                    ⚠️ Vérifiez que les informations saisies sont correctes. Sell Card ne rembourse pas en cas d'erreur.
+                </div>
+                <h3>Choisissez votre moyen de paiement externe</h3>
+                <div class="recharge-methods-list" id="rechargeMethodsSelf"></div>
+                <div class="recharge-field">
+                    <label>Montant à envoyer (FCFA)</label>
+                    <input type="number" id="rechargeAmountSelf" placeholder="Montant" min="100" step="100">
+                </div>
+                <div class="recharge-calc" id="rechargeCalcSelf">
+                    Vous recevrez : <span id="receiveSelf">0</span> FCFA (frais de 2% déduits)
+                </div>
+                <div class="recharge-checkbox">
+                    <input type="checkbox" id="rechargeConfirmSelf">
+                    <label for="rechargeConfirmSelf">Je certifie que les informations sont correctes et j'accepte la politique de non-remboursement.</label>
+                </div>
+                <button class="recharge-btn" id="rechargeSelfBtn" disabled>Recharger mon compte</button>
+                <p style="font-size: 11px; color:#888; margin-top:10px;">xxxxx Paiement via CinetPay xxxxx</p>
+            </div>
+            <!-- Option Un ami -->
+            <div class="recharge-option" id="rechargeFriend">
+                <div class="recharge-warning">
+                    ⚠️ Vérifiez que l'ID destinataire est correct. Aucun remboursement possible.
+                </div>
+                <!-- Sélecteur de source -->
+                <div class="recharge-source-selector" id="friendSourceSelector">
+                    <div class="recharge-source-option active" data-source="internal">Depuis mon compte Sell Card</div>
+                    <div class="recharge-source-option" data-source="external">Depuis un compte externe</div>
+                </div>
+                <!-- Liste des moyens externes (cachée si source interne) -->
+                <div id="friendExternalMethods" style="display: block;">
+                    <h3>Choisissez votre moyen de paiement externe</h3>
+                    <div class="recharge-methods-list" id="rechargeMethodsFriend"></div>
+                </div>
+                <div class="recharge-field">
+                    <label>ID du destinataire</label>
+                    <input type="text" id="friendId" placeholder="ex: SC-XXXXXXXXXXXX">
+                </div>
+                <div class="recharge-field">
+                    <label>Montant à envoyer (FCFA)</label>
+                    <input type="number" id="rechargeAmountFriend" placeholder="Montant" min="100" step="100">
+                </div>
+                <div class="recharge-field">
+                    <label>Motif de l'envoi (obligatoire)</label>
+                    <textarea id="friendReason" placeholder="Ex: cadeau, remboursement..."></textarea>
+                </div>
+                <div class="recharge-calc" id="rechargeCalcFriend">
+                    <span id="receiveFriend"></span>
+                </div>
+                <div class="recharge-checkbox">
+                    <input type="checkbox" id="rechargeConfirmFriend">
+                    <label for="rechargeConfirmFriend">Je certifie que les informations sont correctes et j'accepte la politique de non-remboursement.</label>
+                </div>
+                <button class="recharge-btn" id="rechargeFriendBtn" disabled>Recharger un ami</button>
+                <p style="font-size: 11px; color:#888; margin-top:10px;">xxxxx Vérification ID et intégration paiement xxxxx</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Commandes -->
+    <div class="orders-menu" id="ordersMenu">
+        <div class="orders-header">
+            <h2>Mes commandes</h2>
+            <i data-lucide="x" class="close-orders" id="closeOrders"></i>
+        </div>
+        <div class="orders-content">
+            <div class="orders-list" id="ordersList">
+                <div class="empty-orders">
+                    <i data-lucide="package" style="width: 40px; height: 40px; color: #ccc; margin-bottom: 10px;"></i>
+                    <p>Aucune commande pour le moment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Vendre (inchangé) -->
+    <div class="sell-menu" id="sellMenu">
+        <div class="sell-header">
+            <h2>Vendre une carte</h2>
+            <i data-lucide="x" class="close-sell" id="closeSell"></i>
+        </div>
+        <div class="sell-content">
+            <div class="sell-catalog" id="sellCatalog"></div>
+            <div class="sell-form" id="sellForm" style="display: none;">
+                <h3 id="selectedCardName"></h3>
+                <div class="sell-field">
+                    <label>Montant (dans la devise de la carte)</label>
+                    <input type="number" id="sellAmount" placeholder="Ex: 50" min="1" step="1">
+                </div>
+                <div class="sell-calc" id="sellCalc">
+                    Vous recevrez : <span id="sellReceive">0</span> <span id="sellCurrency">FCFA</span>
+                </div>
+                <div class="sell-field">
+                    <label>Code de la carte</label>
+                    <input type="text" id="sellCode" placeholder="Code à gratter">
+                </div>
+                <div class="sell-field">
+                    <label>Pays de provenance de la carte</label>
+                    <select id="paysProvenance" class="one-ui-select" required>
+                        <option value="" disabled selected>-- Sélectionnez un pays --</option>
+                        <option value="PRY">🇵🇾 PRY (PYG)</option>
+                        <option value="URY">🇺🇾 URY (UYU)</option>
+                        <option value="ECU">🇪🇨 ECU (USD)</option>
+                        <option value="PAN">🇵🇦 PAN (USD)</option>
+                        <option value="CRI">🇨🇷 CRI (CRC)</option>
+                        <option value="DOM">🇩🇴 DOM (DOP)</option>
+                        <option value="GTM">🇬🇹 GTM (GTQ)</option>
+                        <option value="HND">🇭🇳 HND (HNL)</option>
+                        <option value="LUX">LUX (EUR)</option>
+                        <option value="FIN">🇫🇮 FIN (EUR)</option>
+                        <option value="ROU">🇷🇴 ROU (RON)</option>
+                        <option value="CZE">🇨🇿 CZE (CZK)</option>
+                        <option value="HUN">🇭🇺 HUN (HUF)</option>
+                        <option value="BGR">🇧🇬 BGR (BGN)</option>
+                        <option value="HRV">🇭🇷 HRV (EUR)</option>
+                        <option value="SVK">🇸🇰 SVK (EUR)</option>
+                        <option value="SVN">🇸🇮 SVN (EUR)</option>
+                        <option value="EST">🇪🇪 EST (EUR)</option>
+                        <option value="LVA">🇱🇻 LVA (EUR)</option>
+                        <option value="LTU">🇱🇹 LTU (EUR)</option>
+                        <option value="MLT">🇲🇹 MLT (EUR)</option>
+                        <option value="CYP">🇨🇾 CYP (EUR)</option>
+                        <option value="ARE">🇦🇪 ARE (AED)</option>
+                        <option value="SAU">🇸🇦 SAU (SAR)</option>
+                        <option value="QAT">🇶🇦 QAT (QAR)</option>
+                        <option value="KWT">🇰🇼 KWT (KWD)</option>
+                        <option value="JPN">🇯🇵 JPN (JPY)</option>
+                        <option value="KOR">🇰🇷 KOR (KRW)</option>
+                        <option value="IND">🇮🇳 IND (INR)</option>
+                        <option value="SGP">🇸🇬 SGP (SGD)</option>
+                    </select>
+                </div>
+                <div class="sell-field">
+                    <label>Photo du ticket (optionnelle)</label>
+                    <input type="file" id="sellPhoto" accept="image/*">
+                </div>
+                <button class="sell-submit" id="sellSubmit" disabled>Vendre</button>
+                <div class="progress-bar" id="sellProgress" style="display: none;">
+                    <div class="progress-fill" id="sellProgressFill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Acheter (avec panier et recherche) -->
+    <div class="buy-menu" id="buyMenu">
+        <div class="buy-header">
+            <h2>Acheter des cartes</h2>
+            <i data-lucide="x" class="close-buy" id="closeBuy"></i>
+        </div>
+        <div class="buy-content">
+            <!-- Options principales -->
+            <div class="buy-options">
+                <div class="buy-option-btn" id="buyForMeOption">
+                    <i data-lucide="user"></i>
+                    <div>
+                        <h3>Pour moi-même</h3>
+                        <p>Achetez une carte pour votre propre usage</p>
+                    </div>
+                </div>
+                <div class="buy-option-btn" id="buyForGiftOption">
+                    <i data-lucide="gift"></i>
+                    <div>
+                        <h3>Offrir à un proche</h3>
+                        <p>Envoyez une carte cadeau à un ami ou parent</p>
+                    </div>
+                </div>
+                <div class="buy-option-btn" id="requestGiftOption">
+                    <i data-lucide="mail"></i>
+                    <div>
+                        <h3>Demander un cadeau</h3>
+                        <p>Créez un lien à partager pour recevoir une carte</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Catalogue avec recherche et panier -->
+            <div id="buyCatalogContainer" style="display: none;">
+                <div class="buy-header-icons">
+                    <div class="buy-search">
+                        <input type="text" id="buySearch" placeholder="Rechercher une carte...">
+                    </div>
+                    <div class="cart-icon" id="cartIcon">
+                        <i data-lucide="shopping-cart"></i>
+                        <span class="cart-count" id="cartCount">0</span>
+                    </div>
+                </div>
+                <h3>Sélectionnez des cartes</h3>
+                <div class="buy-catalog" id="buyCatalog">
+                    <!-- Chargé dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Panier -->
+            <div class="cart-panel" id="cartPanel" style="display: none;">
+                <h3>Votre panier</h3>
+                <div id="cartItems"></div>
+                <div class="cart-total" id="cartTotal">Total: 0 FCFA</div>
+                <div class="cart-actions">
+                    <button class="checkout-btn" id="checkoutBtn">Payer le panier</button>
+                    <button class="clear-cart-btn" id="clearCartBtn">Vider</button>
+                </div>
+            </div>
+
+            <!-- Formulaire pour "Pour moi-même" -->
+            <div class="buy-detail" id="buyDetail" style="display: none;">
+                <h3 id="buyCardName"></h3>
+                <p>Prix unitaire : <span id="buyPrice"></span> <span id="buyCurrency"></span></p>
+                <p><span id="buyDescription"></span></p>
+                <button class="btn-primary" id="confirmBuyForMe">Acheter pour moi</button>
+            </div>
+
+            <!-- Formulaire pour "Offrir à un proche" -->
+            <div class="gift-detail" id="giftDetail" style="display: none;">
+                <h3 id="giftCardName"></h3>
+                <p>Prix unitaire : <span id="giftPrice"></span> <span id="giftCurrency"></span></p>
+                <div class="gift-field">
+                    <label>ID du destinataire</label>
+                    <input type="text" id="recipientId" placeholder="ex: SC-XXXXXXXXXXXX" required>
+                </div>
+                <div class="gift-field">
+                    <label>Motif du cadeau (obligatoire)</label>
+                    <textarea id="giftReason" placeholder="Ex: Bon anniversaire, félicitations, merci..." required></textarea>
+                </div>
+                <button class="btn-primary" id="confirmGift">Offrir</button>
+            </div>
+
+            <!-- Formulaire pour "Demander un cadeau" -->
+            <div class="request-detail" id="requestDetail" style="display: none;">
+                <h3 id="requestCardName"></h3>
+                <p>Créez un lien à partager avec vos proches.</p>
+                <div class="gift-field">
+                    <label>Votre message (optionnel)</label>
+                    <textarea id="requestMessage" placeholder="Ex: Pour mon anniversaire, j'aimerais cette carte..."></textarea>
+                </div>
+                <button class="btn-primary" id="generateRequestLink">Générer le lien</button>
+                <div class="request-link" id="requestLinkContainer" style="display: none;">
+                    <span id="requestLink"></span>
+                    <button class="copy-link-btn" id="copyRequestLink">Copier</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Parrainage -->
+    <div class="parrainage-menu" id="parrainageMenu">
+        <div class="parrainage-header">
+            <h2>Mon parrainage</h2>
+            <i data-lucide="x" class="close-parrainage" id="closeParrainage"></i>
+        </div>
+        <div class="parrainage-content">
+            <div class="parrainage-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalGagne">0 FCFA</div>
+                    <div class="stat-label">Gagné au total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalFilleuls">0</div>
+                    <div class="stat-label">Filleuls</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="gainRestant">0 FCFA</div>
+                    <div class="stat-label">Plafond restant</div>
+                </div>
+            </div>
+            
+            <div class="parrainage-code-section">
+                <h3>Votre code de parrainage</h3>
+                <div class="code-box" id="codeParrainage">
+                    <span id="codeValue">SC-XXXXXXXXXXXX</span>
+                    <button id="copyCodeBtn" class="copy-btn">
+                        <i data-lucide="copy"></i>
+                    </button>
+                </div>
+                <p class="code-info">Partagez ce code avec vos amis. Ils le saisiront lors de leur inscription.</p>
+            </div>
+            
+            <div class="filleuls-list" id="filleulsList">
+                <h3>Vos filleuls</h3>
+                <div class="empty-filleuls" id="emptyFilleuls">
+                    <i data-lucide="users" style="width:40px;height:40px;color:#ccc;"></i>
+                    <p>Vous n'avez pas encore parrainé d'amis.</p>
+                    <p class="small">Parrainez et gagnez 250 FCFA sur chaque vente de votre filleul (jusqu'à 10 000 FCFA) !</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu Conditions Générales -->
+    <div class="conditions-menu" id="conditionsMenu">
+        <div class="conditions-header">
+            <h2>Conditions Générales</h2>
+            <i data-lucide="x" class="close-conditions" id="closeConditions"></i>
+        </div>
+        <div class="conditions-content">
+            <h2>Conditions Générales - Sell Card</h2>
+            <h3>1. Objet du Service</h3>
+            <p>Sell Card est une plateforme de rachat de cartes cadeaux et de devises numériques. Nous rachetons vos actifs contre un paiement en monnaie locale (Orange Money, MTN, Wave, Moov et autres .....).</p>
+            
+            <h3>2. Validité des Cartes (La Règle d'Or)</h3>
+            <p><strong>Responsabilité :</strong> Le client garantit que la carte envoyée est valide, possède le solde annoncé et a été acquise légalement.</p>
+            <p><strong>Vérification :</strong> Chaque carte subit une vérification manuelle ou automatique. Le paiement n'est déclenché qu'après confirmation de la validité par nos services.</p>
+            <p><strong>Cartes déjà utilisées :</strong> Si une carte est déclarée "Déjà utilisée" ou "Invalide" lors de la vérification, aucun paiement ne sera effectué.</p>
+            
+            <h3>3. Tarifs et Commissions</h3>
+            <p><strong>Transparence :</strong> Les taux de rachat sont affichés en temps réel sur l'application.</p>
+            <p><strong>Commission fixe :</strong> Une commission de 5 % est appliquée sur les cartes dites "faible risque" (Steam, Razer Gold, etc.).</p>
+            <p><strong>Ajustement :</strong> Sell Card se réserve le droit de modifier la commission (jusqu'à 25 %) pour les cartes sans reçu ou à haut risque.</p>
+            
+            <h3>4. Délais de Paiement</h3>
+            <p>Le transfert vers votre compte Mobile Money est généralement effectué dans un délai de 5 à 30 minutes après validation de la carte. En cas de vérification approfondie, ce délai peut aller jusqu'à 24h.</p>
+            
+            <h3>5. Frais de Transfert</h3>
+            <p>Les frais d'envoi liés aux opérateurs (Orange, MTN, Wave et autre ....) sont à la charge du client et sont déduits du montant final reçu, sauf mention contraire.</p>
+            
+            <h3>6. Tentative de Fraude</h3>
+            <p>Toute tentative d'envoi de cartes volées, déjà utilisées ou de reçus falsifiés entraînera le blocage définitif du compte client et le signalement aux autorités compétentes.</p>
+        </div>
+    </div>
+    
+    <!-- Menu FAQ -->
+    <div class="faq-modal" id="faqModal">
+        <div class="faq-header">
+            <h2>Centre d'Assistance</h2>
+            <div class="close-faq" id="closeFaq">
+                <i data-lucide="x"></i>
+            </div>
+        </div>
+        <div class="faq-content">
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="shield-check"></i> Fiabilité des transactions</div>
+                <div class="faq-answer">
+                    Chaque transaction sur Sell Card est sécurisée par un protocole de vérification strict. Une fois votre actif validé par nos services, le transfert de fonds est garanti.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="zap"></i> Délais de traitement</div>
+                <div class="faq-answer">
+                    Notre infrastructure permet un traitement rapide des demandes. En règle générale, le solde est crédité sur votre compte dans un délai de 2 à 24 heures après confirmation de la validité de l'actif.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="globe"></i> Devises et types d'actifs</div>
+                <div class="faq-answer">
+                    Nous acceptons une large gamme de devises internationales. Le montant final est calculé selon le taux en vigueur sur notre plateforme au moment de la validation.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="wallet"></i> Modalités de versement</div>
+                <div class="faq-answer">
+                    Nous assurons les paiements via les canaux de transfert que vous privilégiez. Les fonds sont envoyés directement vers la solution de paiement renseignée lors de votre dépôt.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="alert-octagon"></i> Politique en cas d'actif invalide</div>
+                <div class="faq-answer">
+                    Tout actif déjà activé ou non conforme aux standards de sécurité sera systématiquement rejeté. Sell Card se réserve le droit de restreindre l'accès aux utilisateurs ne respectant pas les conditions d'utilisation.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="lock"></i> Confidentialité des données</div>
+                <div class="faq-answer">
+                    La protection de vos informations est notre priorité. Toutes les données transmises sont chiffrées de bout en bout et ne sont jamais divulguées à des entités tierces.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="repeat"></i> Transferts entre comptes</div>
+                <div class="faq-answer">
+                    Les transferts d'argent d'un compte Sell Card à un autre (via ID) sont entièrement gratuits. Vous pouvez envoyer des fonds à un proche en quelques secondes, sans aucun frais.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="globe"></i> Recevoir de l'argent de l'étranger</div>
+                <div class="faq-answer">
+                    Grâce à votre identifiant unique (ID), vous pouvez recevoir des fonds de n'importe où dans le monde. Une fois l'argent crédité sur votre compte Sell Card, vous pouvez le retirer facilement via Mobile Money ou autres moyens de paiement disponibles. Aucune restriction géographique.
+                </div>
+            </div>
+            <div class="faq-card">
+                <div class="faq-question"><i data-lucide="credit-card"></i> Retirer de l'argent physiquement</div>
+                <div class="faq-answer">
+                    Vous pouvez retirer votre argent Sell Card vers votre compte Mobile Money (Orange, MTN, Wave, etc.) ou vers une carte bancaire. Ces fonds deviennent alors disponibles pour un retrait physique aux distributeurs ou auprès des opérateurs.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom sheet pour les autres cartes -->
+    <div class="other-cards-sheet" id="otherCardsSheet">
+        <div class="sheet-header">
+            <h3>Autres cartes</h3>
+            <i data-lucide="x" class="close-sheet" id="closeSheet"></i>
+        </div>
+        <div class="sheet-content" id="otherCardsList"></div>
+    </div>
+    <div class="overlay-sheet" id="overlaySheet"></div>
+</div>
+
+<script>
+    // ========== INITIALISATION FIREBASE ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyCZZWUv02IkFm1T1DoY8XpoMBMYyttfd6I",
+        authDomain: "sell-card-ae608.firebaseapp.com",
+        projectId: "sell-card-ae608",
+        storageBucket: "sell-card-ae608.firebasestorage.app",
+        messagingSenderId: "372824296309",
+        appId: "1:372824296309:web:e4fa0232cbb07f7f85a13c",
+        measurementId: "G-ZPL1VW3JPM"
+    };
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // ========== CONFIGURATION CINETPAY (à remplacer par vos clés) ==========
+    const CINETPAY_API_KEY = "xxxxx";
+    const CINETPAY_SITE_ID = "xxxxx";
+    const NOTIFY_URL = "https://ton-domaine.com/notify";
+
+    // ========== CONFIGURATION RELOADLY (à remplacer) ==========
+    const RELOADLY_CLIENT_ID = "xxxxx";
+    const RELOADLY_CLIENT_SECRET = "xxxxx";
+
+    // ========== FONCTIONS DE PAIEMENT ==========
+    async function initierPaiementCinetPay(montant, devise, description, utilisateurId, type, metadata = null) {
+        const transactionId = 'TRX_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+        const formData = new FormData();
+        formData.append('apikey', CINETPAY_API_KEY);
+        formData.append('site_id', CINETPAY_SITE_ID);
+        formData.append('transaction_id', transactionId);
+        formData.append('amount', montant);
+        formData.append('currency', devise);
+        formData.append('description', description);
+        formData.append('notify_url', NOTIFY_URL);
+        formData.append('return_url', window.location.href);
+        formData.append('channels', 'ALL');
+
+        try {
+            const response = await fetch('https://api.cinetpay.com/v1/?method=checkout', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.code === '201') {
+                window.location.href = data.data.payment_url;
+                await db.collection('paiements').doc(transactionId).set({
+                    userId: utilisateurId,
+                    montant: montant,
+                    devise: devise,
+                    type: type,
+                    metadata: metadata,
+                    statut: 'en_attente',
+                    date: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                alert('Erreur lors de l’initialisation du paiement : ' + data.message);
+            }
+        } catch (error) {
+            console.error('Erreur CinetPay:', error);
+            alert('Erreur de communication avec le service de paiement.');
+        }
+    }
+
+    // Transfert interne entre comptes Sell Card
+    async function transfertInterne(montant, expediteurId, destinataireId, motif) {
+        if (!destinataireId) {
+            alert('ID destinataire manquant');
+            return false;
+        }
+        const expediteurRef = db.collection('utilisateurs').doc(expediteurId);
+        const expediteurSnap = await expediteurRef.get();
+        if (!expediteurSnap.exists) {
+            alert('Compte expéditeur introuvable');
+            return false;
+        }
+        const soldeExpediteur = parseFloat(expediteurSnap.data().solde || 0);
+        if (soldeExpediteur < montant) {
+            alert('Solde insuffisant');
+            return false;
+        }
+
+        const destinataireQuery = await db.collection('utilisateurs').where('idPublic', '==', destinataireId).get();
+        if (destinataireQuery.empty) {
+            alert('ID destinataire invalide');
+            return false;
+        }
+        const destinataireDoc = destinataireQuery.docs[0];
+        const destinataireRef = destinataireDoc.ref;
+
+        await db.runTransaction(async (transaction) => {
+            const expediteurDoc = await transaction.get(expediteurRef);
+            const destinataireDocT = await transaction.get(destinataireRef);
+            const nouveauSoldeExpediteur = expediteurDoc.data().solde - montant;
+            const nouveauSoldeDestinataire = (destinataireDocT.data().solde || 0) + montant;
+            transaction.update(expediteurRef, { solde: nouveauSoldeExpediteur });
+            transaction.update(destinataireRef, { solde: nouveauSoldeDestinataire });
+        });
+
+        await db.collection('notifications').add({
+            userId: destinataireDoc.id,
+            titre: 'Réception de fonds',
+            message: `Vous avez reçu ${montant} FCFA de ${expediteurId}. Motif: ${motif}`,
+            type: 'transaction',
+            statut: 'success',
+            lu: false,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            icone: 'wallet'
+        });
+
+        alert('Transfert réussi !');
+        return true;
+    }
+
+    // ========== ÉLÉMENTS COMMUNS ==========
+    const splash = document.getElementById('splash-screen');
+    const formContainer = document.getElementById('form-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+
+    // ========== FONCTION POUR GÉNÉRER UN ID PUBLIC UNIQUE ==========
+    async function genererIdPublicUnique(db) {
+        const prefix = "SC-";
+        const longueur = 12;
+        const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let unique = false;
+        let id;
+        while (!unique) {
+            id = prefix;
+            for (let i = 0; i < longueur; i++) {
+                id += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+            }
+            const snapshot = await db.collection('utilisateurs').where('idPublic', '==', id).get();
+            if (snapshot.empty) unique = true;
+        }
+        return id;
+    }
+
+    // ========== ANIMATION DU SPLASH ==========
+    const s = document.getElementById('letter-s');
+    const c = document.getElementById('letter-c');
+    const sc = document.getElementById('full-logo');
+    const title = document.getElementById('brand-title');
+    const notice = document.getElementById('brand-notice');
+
+    setTimeout(() => {
+        s.style.display = 'block';
+        s.style.animation = 'bounceIn 0.8s forwards';
+    }, 500);
+    setTimeout(() => {
+        s.style.display = 'none';
+        c.style.display = 'block';
+        c.style.animation = 'bounceIn 0.8s forwards';
+    }, 1500);
+    setTimeout(() => {
+        c.style.display = 'none';
+        sc.style.display = 'block';
+        sc.style.animation = 'fadeIn 0.5s forwards';
+    }, 3000);
+    setTimeout(() => {
+        title.style.animation = 'fadeIn 1s forwards';
+        notice.style.animation = 'fadeIn 1s forwards';
+    }, 4000);
+    setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => {
+            splash.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    dashboardContainer.style.display = 'flex';
+                } else {
+                    formContainer.style.display = 'block';
+                }
+            });
+        }, 800);
+    }, 5500);
+
+    // ========== LOGIQUE DU FORMULAIRE ==========
+    const countrySelector = document.getElementById('country-select');
+    const termsCheck = document.getElementById('terms-check');
+    const googleBtn = document.getElementById('google-auth-btn');
+    const langSelect = document.getElementById('lang-select');
+    const parrainCode = document.getElementById('parrainCode');
+
+    termsCheck.addEventListener('change', function() {
+        googleBtn.disabled = !this.checked;
+    });
+
+    googleBtn.addEventListener('click', function() {
+        const country = countrySelector.value;
+        if (!country) {
+            alert("⚠️ Veuillez d'abord sélectionner votre pays.");
+            return;
+        }
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider)
+            .then(async (result) => {
+                const user = result.user;
+                const userRef = db.collection('utilisateurs').doc(user.uid);
+                const doc = await userRef.get();
+                if (!doc.exists) {
+                    const idPublic = await genererIdPublicUnique(db);
+                    const userData = {
+                        solde: "0",
+                        idPublic: idPublic,
+                        pays: country,
+                        email: user.email,
+                        nom: user.displayName || "",
+                        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    const codeSaisi = parrainCode.value.trim();
+                    if (codeSaisi) {
+                        const parrainSnapshot = await db.collection('utilisateurs').where('idPublic', '==', codeSaisi).get();
+                        if (!parrainSnapshot.empty) {
+                            const parrainDoc = parrainSnapshot.docs[0];
+                            userData.parrain = parrainDoc.id;
+                        }
+                    }
+                    await userRef.set(userData);
+                }
+                window.location.reload();
+            })
+            .catch((error) => {
+                console.error("Erreur d'authentification :", error);
+                alert("Erreur : " + error.message);
+            });
+    });
+
+    const translations = {
+        fr: { title: "SELL CARD", slogan: "Vente de cartes et transfert d'argent", countryLabel: "Sélectionnez votre pays (Langue & Monnaie)", terms: "J'accepte les conditions d'utilisation de Sell Card", googleBtn: "Continuer avec Google", security: "Toute transaction chez Sell Card est 100% anonyme" },
+        en: { title: "SELL CARD", slogan: "Selling cards and money transfer", countryLabel: "Select your country (Language & Currency)", terms: "I accept the terms of use of Sell Card", googleBtn: "Continue with Google", security: "All transactions at Sell Card are 100% anonymous" },
+        ar: { title: "SELL CARD", slogan: "بيع البطاقات وتحويل الأموال", countryLabel: "حدد بلدك (اللغة والعملة)", terms: "أوافق على شروط استخدام Sell Card", googleBtn: "المتابعة مع Google", security: "جميع المعاملات في Sell Card مجهولة 100%" },
+        es: { title: "SELL CARD", slogan: "Venta de tarjetas y transferencia de dinero", countryLabel: "Seleccione su país (Idioma y Moneda)", terms: "Acepto los términos de uso de Sell Card", googleBtn: "Continuar con Google", security: "Todas las transacciones en Sell Card son 100% anónimas" },
+        pt: { title: "SELL CARD", slogan: "Venda de cartões e transferência de dinheiro", countryLabel: "Selecione seu país (Idioma e Moeda)", terms: "Aceito os termos de uso do Sell Card", googleBtn: "Continuar com Google", security: "Todas as transações na Sell Card são 100% anônimas" }
+    };
+    function changeLanguage(lang) {
+        document.getElementById('dynamic-title').textContent = translations[lang].title;
+        document.getElementById('dynamic-slogan').textContent = translations[lang].slogan;
+        document.getElementById('country-label').textContent = translations[lang].countryLabel;
+        document.getElementById('terms-label').textContent = translations[lang].terms;
+        document.getElementById('google-btn-text').textContent = translations[lang].googleBtn;
+        document.getElementById('security-text').textContent = translations[lang].security;
+    }
+    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    changeLanguage('fr');
+
+    // ========== CODE DU DASHBOARD ==========
+    const menuButton = document.getElementById('menuButton');
+    const settingsMenu = document.getElementById('settingsMenu');
+    const notificationsButton = document.getElementById('notificationsButton');
+    const notificationsMenu = document.getElementById('notificationsMenu');
+    const overlay = document.getElementById('overlay');
+    const closeMenu = document.getElementById('closeMenu');
+    const closeNotifications = document.getElementById('closeNotifications');
+    const notificationDot = document.getElementById('notificationDot');
+    const accountButton = document.getElementById('accountButton');
+    const paymentMenu = document.getElementById('paymentMenu');
+    const closePayment = document.getElementById('closePayment');
+    const showAddPaymentFormBtn = document.getElementById('showAddPaymentForm');
+    const addPaymentForm = document.getElementById('addPaymentForm');
+    const paymentTypeOptions = document.querySelectorAll('.payment-type-option');
+    const savePaymentBtn = document.getElementById('savePayment');
+    const paymentNumberInput = document.getElementById('paymentNumber');
+    const paymentMethodsList = document.getElementById('paymentMethodsList');
+    const withdrawButton = document.getElementById('withdrawButton');
+    const withdrawMenu = document.getElementById('withdrawMenu');
+    const closeWithdraw = document.getElementById('closeWithdraw');
+    const withdrawMethodsList = document.getElementById('withdrawMethodsList');
+    const withdrawAmount = document.getElementById('withdrawAmount');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const historyButton = document.getElementById('historyButton');
+    const historyMenu = document.getElementById('historyMenu');
+    const closeHistory = document.getElementById('closeHistory');
+    const historyList = document.getElementById('historyList');
+    const homeButton = document.getElementById('homeButton');
+    const rechargeButton = document.getElementById('rechargeButton');
+    const rechargeMenu = document.getElementById('rechargeMenu');
+    const closeRecharge = document.getElementById('closeRecharge');
+    const rechargeTabs = document.querySelectorAll('.recharge-tab');
+    const rechargeSelf = document.getElementById('rechargeSelf');
+    const rechargeFriend = document.getElementById('rechargeFriend');
+    const rechargeMethodsSelf = document.getElementById('rechargeMethodsSelf');
+    const rechargeMethodsFriend = document.getElementById('rechargeMethodsFriend');
+    const rechargeAmountSelf = document.getElementById('rechargeAmountSelf');
+    const rechargeAmountFriend = document.getElementById('rechargeAmountFriend');
+    const friendId = document.getElementById('friendId');
+    const friendReason = document.getElementById('friendReason');
+    const rechargeConfirmSelf = document.getElementById('rechargeConfirmSelf');
+    const rechargeConfirmFriend = document.getElementById('rechargeConfirmFriend');
+    const rechargeSelfBtn = document.getElementById('rechargeSelfBtn');
+    const rechargeFriendBtn = document.getElementById('rechargeFriendBtn');
+    const friendSourceOptions = document.querySelectorAll('#friendSourceSelector .recharge-source-option');
+    const friendExternalMethodsDiv = document.getElementById('friendExternalMethods');
+    const receiveSelfSpan = document.getElementById('receiveSelf');
+    const receiveFriendSpan = document.getElementById('receiveFriend');
+
+    const ordersButton = document.getElementById('ordersButton');
+    const ordersMenu = document.getElementById('ordersMenu');
+    const closeOrders = document.getElementById('closeOrders');
+    const ordersList = document.getElementById('ordersList');
+    const sellButton = document.getElementById('sellButton');
+    const sellMenu = document.getElementById('sellMenu');
+    const closeSell = document.getElementById('closeSell');
+    const sellCatalog = document.getElementById('sellCatalog');
+    const sellFormDash = document.getElementById('sellForm');
+    const selectedCardName = document.getElementById('selectedCardName');
+    const sellAmount = document.getElementById('sellAmount');
+    const sellCalc = document.getElementById('sellCalc');
+    const sellReceive = document.getElementById('sellReceive');
+    const sellCurrencySpan = document.getElementById('sellCurrency');
+    const sellCode = document.getElementById('sellCode');
+    const sellPhoto = document.getElementById('sellPhoto');
+    const sellSubmit = document.getElementById('sellSubmit');
+    const sellProgress = document.getElementById('sellProgress');
+    const sellProgressFill = document.getElementById('sellProgressFill');
+    const popularGrid = document.getElementById('popularGrid');
+    const searchButton = document.getElementById('searchButton');
+    const otherCardsSheet = document.getElementById('otherCardsSheet');
+    const closeSheet = document.getElementById('closeSheet');
+    const overlaySheet = document.getElementById('overlaySheet');
+    const otherCardsList = document.getElementById('otherCardsList');
+    const paysProvenance = document.getElementById('paysProvenance');
+    const searchInput = document.getElementById('searchInput');
+    const clearSearch = document.getElementById('clearSearch');
+
+    // Nouveaux éléments pour le menu Acheter
+    const buyButton = document.getElementById('buyButton');
+    const buyMenu = document.getElementById('buyMenu');
+    const closeBuy = document.getElementById('closeBuy');
+    const buyForMeOption = document.getElementById('buyForMeOption');
+    const buyForGiftOption = document.getElementById('buyForGiftOption');
+    const requestGiftOption = document.getElementById('requestGiftOption');
+    const buyCatalogContainer = document.getElementById('buyCatalogContainer');
+    const buyCatalog = document.getElementById('buyCatalog');
+    const buyDetail = document.getElementById('buyDetail');
+    const giftDetail = document.getElementById('giftDetail');
+    const requestDetail = document.getElementById('requestDetail');
+    const buyCardName = document.getElementById('buyCardName');
+    const buyPrice = document.getElementById('buyPrice');
+    const buyCurrency = document.getElementById('buyCurrency');
+    const buyDescription = document.getElementById('buyDescription');
+    const confirmBuyForMe = document.getElementById('confirmBuyForMe');
+    const giftCardName = document.getElementById('giftCardName');
+    const giftPrice = document.getElementById('giftPrice');
+    const giftCurrency = document.getElementById('giftCurrency');
+    const recipientId = document.getElementById('recipientId');
+    const giftReason = document.getElementById('giftReason');
+    const confirmGift = document.getElementById('confirmGift');
+    const requestCardName = document.getElementById('requestCardName');
+    const requestMessage = document.getElementById('requestMessage');
+    const generateRequestLink = document.getElementById('generateRequestLink');
+    const requestLinkContainer = document.getElementById('requestLinkContainer');
+    const requestLink = document.getElementById('requestLink');
+    const copyRequestLink = document.getElementById('copyRequestLink');
+
+    // Nouveaux éléments pour le panier
+    const cartIcon = document.getElementById('cartIcon');
+    const cartCount = document.getElementById('cartCount');
+    const cartPanel = document.getElementById('cartPanel');
+    const cartItems = document.getElementById('cartItems');
+    const cartTotal = document.getElementById('cartTotal');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const clearCartBtn = document.getElementById('clearCartBtn');
+    const buySearch = document.getElementById('buySearch');
+
+    // Boutons de contact
+    const whatsappBtn = document.getElementById('whatsappBtn');
+    const gmailBtn = document.getElementById('gmailBtn');
+
+    if (whatsappBtn) {
+        whatsappBtn.addEventListener('click', () => {
+            window.open('https://wa.me/qr/UWYBOFF7GXRSB1', '_blank');
+        });
+    }
+    if (gmailBtn) {
+        gmailBtn.addEventListener('click', () => {
+            window.location.href = 'mailto:sellcard.officiel@gmail.com';
+        });
+    }
+
+    // Variables d'état
+    let selectedPaymentType = 'mobile_money';
+    let selectedWithdrawMethod = null;
+    let selectedRechargeMethodSelf = null;
+    let selectedRechargeMethodFriend = null;
+    let userMethods = [];
+    let selectedCard = null;
+    let selectedProduct = null;
+    let currentBuyMode = null;
+    let userPays = null;
+    let commission = 0.012;
+    let realBalance = "0";
+    let realID = "";
+    let currency = "FCFA";
+    let friendSource = "internal";
+    let toutesLesCartes = [];
+    let tousLesProduits = [];
+    let panier = [];
+
+    const cartesMap = new Map();
+
+    db.collection("config").doc("commission").onSnapshot(doc => {
+        if (doc.exists) commission = doc.data().taux || 0.012;
+    });
+
+    // Fonctions d'ouverture/fermeture des menus (inchangées)
+    menuButton.addEventListener('click', () => { settingsMenu.classList.add('active'); overlay.classList.add('active'); });
+    notificationsButton.addEventListener('click', () => { notificationsMenu.classList.add('active'); overlay.classList.add('active'); notificationDot.classList.remove('active'); });
+    accountButton.addEventListener('click', () => { paymentMenu.classList.add('active'); overlay.classList.add('active'); });
+    withdrawButton.addEventListener('click', () => { withdrawMenu.classList.add('active'); overlay.classList.add('active'); });
+    historyButton.addEventListener('click', () => { historyMenu.classList.add('active'); overlay.classList.add('active'); });
+    rechargeButton.addEventListener('click', () => { rechargeMenu.classList.add('active'); overlay.classList.add('active'); });
+    ordersButton.addEventListener('click', () => { ordersMenu.classList.add('active'); overlay.classList.add('active'); });
+    sellButton.addEventListener('click', () => { sellMenu.classList.add('active'); overlay.classList.add('active'); });
+    homeButton.addEventListener('click', () => { location.reload(); });
+
+    // Ouvrir le menu Acheter
+    buyButton.addEventListener('click', () => {
+        buyMenu.classList.add('active');
+        overlay.classList.add('active');
+        buyCatalogContainer.style.display = 'none';
+        buyDetail.style.display = 'none';
+        giftDetail.style.display = 'none';
+        requestDetail.style.display = 'none';
+        cartPanel.style.display = 'none';
+        selectedProduct = null;
+        currentBuyMode = null;
+    });
+
+    closeBuy.addEventListener('click', () => {
+        buyMenu.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+
+    // Options du menu Acheter
+    buyForMeOption.addEventListener('click', () => {
+        currentBuyMode = 'self';
+        chargerCatalogueReloadly();
+        buyCatalogContainer.style.display = 'block';
+        giftDetail.style.display = 'none';
+        requestDetail.style.display = 'none';
+        buyDetail.style.display = 'none';
+        cartPanel.style.display = 'none';
+    });
+
+    buyForGiftOption.addEventListener('click', () => {
+        currentBuyMode = 'gift';
+        chargerCatalogueReloadly();
+        buyCatalogContainer.style.display = 'block';
+        giftDetail.style.display = 'none';
+        requestDetail.style.display = 'none';
+        buyDetail.style.display = 'none';
+        cartPanel.style.display = 'none';
+    });
+
+    requestGiftOption.addEventListener('click', () => {
+        currentBuyMode = 'request';
+        chargerCatalogueReloadly();
+        buyCatalogContainer.style.display = 'block';
+        giftDetail.style.display = 'none';
+        requestDetail.style.display = 'none';
+        buyDetail.style.display = 'none';
+        cartPanel.style.display = 'none';
+    });
+
+    // Panier
+    cartIcon.addEventListener('click', () => {
+        if (panier.length === 0) {
+            alert('Votre panier est vide');
+            return;
+        }
+        afficherPanier();
+        cartPanel.style.display = 'block';
+    });
+
+    function ajouterAuPanier(produit) {
+        const prix = produit.denominations?.[0] || 0;
+        const existing = panier.find(p => p.productId === produit.productId);
+        if (existing) {
+            existing.quantite++;
+        } else {
+            panier.push({
+                productId: produit.productId,
+                nom: produit.productName,
+                prix: prix,
+                devise: produit.currencyCode,
+                quantite: 1
+            });
+        }
+        mettreAJourPanier();
+    }
+
+    function mettreAJourPanier() {
+        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+        cartCount.innerText = panier.length;
+        if (panier.length === 0) {
+            cartPanel.style.display = 'none';
+        }
+    }
+
+    function afficherPanier() {
+        let html = '';
+        panier.forEach((item, index) => {
+            html += `<div class="cart-item">
+                <span>${item.nom} x${item.quantite}</span>
+                <span>${(item.prix * item.quantite * 600).toFixed(0)} FCFA</span>
+            </div>`;
+        });
+        cartItems.innerHTML = html;
+        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+        cartTotal.innerText = `Total: ${total.toFixed(0)} FCFA`;
+    }
+
+    clearCartBtn.addEventListener('click', () => {
+        panier = [];
+        mettreAJourPanier();
+        cartPanel.style.display = 'none';
+    });
+
+    checkoutBtn.addEventListener('click', async () => {
+        if (panier.length === 0) return;
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+        const metadata = {
+            type: 'panier',
+            articles: panier.map(p => ({
+                productId: p.productId,
+                productName: p.nom,
+                unitPrice: p.prix,
+                currency: p.devise,
+                quantity: p.quantite
+            }))
+        };
+
+        await initierPaiementCinetPay(
+            total,
+            'XOF',
+            `Achat groupé (${panier.length} articles)`,
+            user.uid,
+            'achat_reloadly',
+            metadata
+        );
+
+        panier = [];
+        mettreAJourPanier();
+        cartPanel.style.display = 'none';
+    });
+
+    // Éléments du menu parrainage et conditions
+    const parrainageButton = document.getElementById('parrainageButton');
+    const parrainageMenu = document.getElementById('parrainageMenu');
+    const closeParrainage = document.getElementById('closeParrainage');
+    const codeValue = document.getElementById('codeValue');
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    const totalGagne = document.getElementById('totalGagne');
+    const totalFilleuls = document.getElementById('totalFilleuls');
+    const gainRestant = document.getElementById('gainRestant');
+    const filleulsList = document.getElementById('filleulsList');
+    const emptyFilleuls = document.getElementById('emptyFilleuls');
+
+    const conditionsButton = document.getElementById('conditionsButton');
+    const conditionsMenu = document.getElementById('conditionsMenu');
+    const closeConditions = document.getElementById('closeConditions');
+
+    const faqButton = document.getElementById('faqButton');
+    const faqModal = document.getElementById('faqModal');
+    const closeFaq = document.getElementById('closeFaq');
+
+    // Ouvrir le menu parrainage
+    parrainageButton.addEventListener('click', () => {
+        parrainageMenu.classList.add('active');
+        overlay.classList.add('active');
+        chargerDonneesParrainage();
+    });
+
+    closeParrainage.addEventListener('click', () => {
+        parrainageMenu.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+
+    conditionsButton.addEventListener('click', () => {
+        conditionsMenu.classList.add('active');
+        overlay.classList.add('active');
+    });
+
+    closeConditions.addEventListener('click', () => {
+        conditionsMenu.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+
+    faqButton.addEventListener('click', () => {
+        faqModal.classList.add('active');
+        overlay.classList.add('active');
+    });
+
+    closeFaq.addEventListener('click', () => {
+        faqModal.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+
+    overlay.addEventListener('click', () => {
+        faqModal.classList.remove('active');
+        parrainageMenu.classList.remove('active');
+        conditionsMenu.classList.remove('active');
+        settingsMenu.classList.remove('active');
+        notificationsMenu.classList.remove('active');
+        paymentMenu.classList.remove('active');
+        withdrawMenu.classList.remove('active');
+        historyMenu.classList.remove('active');
+        rechargeMenu.classList.remove('active');
+        ordersMenu.classList.remove('active');
+        sellMenu.classList.remove('active');
+        buyMenu.classList.remove('active');
+        otherCardsSheet.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+
+    copyCodeBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(codeValue.innerText).then(() => {
+            alert('Code copié !');
+        });
+    });
+
+    async function chargerDonneesParrainage() {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        const userRef = db.collection('utilisateurs').doc(user.uid);
+        const userDoc = await userRef.get();
+        
+        if (userDoc.exists) {
+            const data = userDoc.data();
+            codeValue.innerText = data.idPublic || 'SC-XXXXXXXXXXXX';
+            
+            const filleulsSnapshot = await db.collection('utilisateurs')
+                .where('parrain', '==', user.uid)
+                .get();
+            
+            const filleulsCount = filleulsSnapshot.size;
+            totalFilleuls.innerText = filleulsCount;
+            
+            const total = data.totalParrainage || 0;
+            totalGagne.innerText = `${total} FCFA`;
+            
+            const reste = Math.max(0, 10000 - total);
+            gainRestant.innerText = `${reste} FCFA`;
+            
+            if (filleulsCount === 0) {
+                emptyFilleuls.style.display = 'block';
+                const anciensItems = filleulsList.querySelectorAll('.filleul-item');
+                anciensItems.forEach(item => item.remove());
+            } else {
+                emptyFilleuls.style.display = 'none';
+                
+                const anciensItems = filleulsList.querySelectorAll('.filleul-item');
+                anciensItems.forEach(item => item.remove());
+                
+                filleulsSnapshot.forEach(doc => {
+                    const filleul = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'filleul-item';
+                    item.innerHTML = `
+                        <div class="filleul-avatar"><i data-lucide="user"></i></div>
+                        <div class="filleul-info">
+                            <div class="filleul-name">${filleul.nom || 'Anonyme'}</div>
+                            <div class="filleul-email">${filleul.email || ''}</div>
+                        </div>
+                        <div class="filleul-stats">+250 F/vente</div>
+                    `;
+                    filleulsList.appendChild(item);
+                });
+                lucide.createIcons();
+            }
+        }
+    }
+
+    const closeAllMenus = () => {
+        settingsMenu.classList.remove('active'); notificationsMenu.classList.remove('active'); paymentMenu.classList.remove('active');
+        withdrawMenu.classList.remove('active'); historyMenu.classList.remove('active'); rechargeMenu.classList.remove('active');
+        ordersMenu.classList.remove('active'); sellMenu.classList.remove('active'); buyMenu.classList.remove('active');
+        parrainageMenu.classList.remove('active'); conditionsMenu.classList.remove('active'); faqModal.classList.remove('active');
+        overlay.classList.remove('active');
+    };
+    closeMenu.addEventListener('click', closeAllMenus);
+    closeNotifications.addEventListener('click', closeAllMenus);
+    closePayment.addEventListener('click', closeAllMenus);
+    closeWithdraw.addEventListener('click', closeAllMenus);
+    closeHistory.addEventListener('click', closeAllMenus);
+    closeRecharge.addEventListener('click', closeAllMenus);
+    closeOrders.addEventListener('click', closeAllMenus);
+    closeSell.addEventListener('click', closeAllMenus);
+    closeBuy.addEventListener('click', closeAllMenus);
+    closeParrainage.addEventListener('click', closeAllMenus);
+    closeConditions.addEventListener('click', closeAllMenus);
+    closeFaq.addEventListener('click', closeAllMenus);
+    overlay.addEventListener('click', closeAllMenus);
+
+    // Onglets recharge
+    rechargeTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            rechargeTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.dataset.target === 'self') { rechargeSelf.classList.add('active'); rechargeFriend.classList.remove('active'); }
+            else { rechargeFriend.classList.add('active'); rechargeSelf.classList.remove('active'); }
+        });
+    });
+
+    friendSourceOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            friendSourceOptions.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            friendSource = opt.dataset.source;
+            if (friendSource === 'internal') {
+                friendExternalMethodsDiv.style.display = 'none';
+                selectedRechargeMethodFriend = null;
+            } else {
+                friendExternalMethodsDiv.style.display = 'block';
+            }
+            checkRechargeFriend();
+        });
+    });
+
+    showAddPaymentFormBtn.addEventListener('click', () => {
+        addPaymentForm.style.display = 'block';
+        showAddPaymentFormBtn.style.display = 'none';
+    });
+    paymentTypeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            paymentTypeOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            selectedPaymentType = option.dataset.type;
+        });
+    });
+    paymentTypeOptions[0].classList.add('selected');
+    savePaymentBtn.addEventListener('click', async () => {
+        const number = paymentNumberInput.value.trim();
+        if (!number) return alert('Veuillez entrer un numéro');
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            const methodsRef = db.collection('utilisateurs').doc(user.uid).collection('moyensPaiement');
+            await methodsRef.add({ type: selectedPaymentType, numero: number, dateAjout: new Date() });
+            paymentNumberInput.value = '';
+            addPaymentForm.style.display = 'none';
+            showAddPaymentFormBtn.style.display = 'flex';
+            alert('Moyen de paiement ajouté !');
+        } catch (error) { console.error(error); alert('Erreur : ' + error.message); }
+    });
+
+    function updateWithdrawMethodsList(methods) {
+        if (methods.length === 0) {
+            withdrawMethodsList.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen enregistré. Ajoutez-en dans "Compte".</p>';
+            withdrawBtn.disabled = true;
+            return;
+        }
+        let html = '';
+        methods.forEach((method, index) => {
+            const icon = method.type === 'mobile_money' ? 'smartphone' : (method.type === 'wave' ? 'zap' : (method.type === 'paypal' ? 'paypal' : 'credit-card'));
+            const typeName = method.type === 'mobile_money' ? 'Mobile Money' : (method.type === 'wave' ? 'Wave' : (method.type === 'paypal' ? 'PayPal' : 'Carte'));
+            const numero = method.numero || '';
+            const maskedNum = numero.length > 4 ? '••••' + numero.slice(-4) : '••••';
+            html += `<div class="withdraw-method-item" data-index="${index}"><div class="withdraw-method-icon"><i data-lucide="${icon}"></i></div><div class="withdraw-method-details"><div class="withdraw-method-name">${typeName}</div><div class="withdraw-method-number">${maskedNum}</div></div></div>`;
+        });
+        withdrawMethodsList.innerHTML = html;
+        lucide.createIcons();
+        document.querySelectorAll('.withdraw-method-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.withdraw-method-item').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedWithdrawMethod = methods[item.dataset.index];
+                checkWithdrawButton();
+            });
+        });
+    }
+    function checkWithdrawButton() {
+        const amount = parseFloat(withdrawAmount.value);
+        const balance = parseFloat(realBalance) || 0;
+        withdrawBtn.disabled = !(selectedWithdrawMethod && amount >= 100 && amount <= balance);
+    }
+    withdrawAmount.addEventListener('input', checkWithdrawButton);
+    withdrawBtn.addEventListener('click', async () => {
+        if (!selectedWithdrawMethod) return alert('Sélectionnez un moyen');
+        const amount = parseFloat(withdrawAmount.value);
+        if (isNaN(amount) || amount < 100) return alert('Montant minimum 100 FCFA');
+        if (amount > parseFloat(realBalance)) return alert('Solde insuffisant');
+        alert(`xxxxx Demande de retrait de ${amount} FCFA vers ${selectedWithdrawMethod.type} (${selectedWithdrawMethod.numero}) - Intégration CinetPay à faire xxxxx`);
+    });
+
+    function updateRechargeMethodsList(methods) {
+        if (methods.length === 0) {
+            rechargeMethodsSelf.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen. Ajoutez-en dans "Compte".</p>';
+            rechargeMethodsFriend.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen. Ajoutez-en dans "Compte".</p>';
+            return;
+        }
+        let htmlSelf = '', htmlFriend = '';
+        methods.forEach((method, index) => {
+            const icon = method.type === 'mobile_money' ? 'smartphone' : (method.type === 'wave' ? 'zap' : (method.type === 'paypal' ? 'paypal' : 'credit-card'));
+            const typeName = method.type === 'mobile_money' ? 'Mobile Money' : (method.type === 'wave' ? 'Wave' : (method.type === 'paypal' ? 'PayPal' : 'Carte'));
+            const numero = method.numero || '';
+            const maskedNum = numero.length > 4 ? '••••' + numero.slice(-4) : '••••';
+            htmlSelf += `<div class="recharge-method-item" data-index="${index}" data-type="self"><div class="recharge-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
+            htmlFriend += `<div class="recharge-method-item" data-index="${index}" data-type="friend"><div class="recharge-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
+        });
+        rechargeMethodsSelf.innerHTML = htmlSelf;
+        rechargeMethodsFriend.innerHTML = htmlFriend;
+        lucide.createIcons();
+
+        document.querySelectorAll('#rechargeSelf .recharge-method-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('#rechargeSelf .recharge-method-item').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedRechargeMethodSelf = methods[item.dataset.index];
+                checkRechargeSelf();
+            });
+        });
+        document.querySelectorAll('#rechargeFriend .recharge-method-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('#rechargeFriend .recharge-method-item').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedRechargeMethodFriend = methods[item.dataset.index];
+                checkRechargeFriend();
+            });
+        });
+    }
+
+    function updateRechargeSelfCalc() {
+        const amount = parseFloat(rechargeAmountSelf.value);
+        if (isNaN(amount) || amount < 100) {
+            receiveSelfSpan.innerText = '0';
+            return;
+        }
+        const receive = amount * 0.98;
+        receiveSelfSpan.innerText = receive.toFixed(0);
+    }
+    rechargeAmountSelf.addEventListener('input', () => {
+        updateRechargeSelfCalc();
+        checkRechargeSelf();
+    });
+
+    function checkRechargeSelf() {
+        const amount = parseFloat(rechargeAmountSelf.value);
+        const checked = rechargeConfirmSelf.checked;
+        const methodSelected = selectedRechargeMethodSelf;
+        rechargeSelfBtn.disabled = !(methodSelected && amount >= 100 && checked);
+    }
+    rechargeConfirmSelf.addEventListener('change', checkRechargeSelf);
+
+    function updateRechargeFriendCalc() {
+        const amount = parseFloat(rechargeAmountFriend.value);
+        if (isNaN(amount) || amount < 100) {
+            receiveFriendSpan.innerText = '';
+            return;
+        }
+        if (friendSource === 'internal') {
+            receiveFriendSpan.innerText = `L'ami recevra : ${amount} FCFA (gratuit)`;
+        } else {
+            const receive = amount * 0.9;
+            receiveFriendSpan.innerText = `L'ami recevra : ${receive.toFixed(0)} FCFA (frais de 10% déduits)`;
+        }
+    }
+    rechargeAmountFriend.addEventListener('input', () => {
+        updateRechargeFriendCalc();
+        checkRechargeFriend();
+    });
+    friendId.addEventListener('input', checkRechargeFriend);
+    friendReason.addEventListener('input', checkRechargeFriend);
+    rechargeConfirmFriend.addEventListener('change', checkRechargeFriend);
+
+    function checkRechargeFriend() {
+        const amount = parseFloat(rechargeAmountFriend.value);
+        const checked = rechargeConfirmFriend.checked;
+        const id = friendId.value.trim();
+        const reason = friendReason.value.trim();
+        if (friendSource === 'internal') {
+            const balance = parseFloat(realBalance) || 0;
+            rechargeFriendBtn.disabled = !(amount >= 100 && amount <= balance && checked && id && reason);
+        } else {
+            const methodSelected = selectedRechargeMethodFriend;
+            rechargeFriendBtn.disabled = !(methodSelected && amount >= 100 && checked && id && reason);
+        }
+    }
+
+    rechargeSelfBtn.addEventListener('click', async () => {
+        const amount = parseFloat(rechargeAmountSelf.value);
+        const method = selectedRechargeMethodSelf;
+        if (!method) return alert('Sélectionnez un moyen de paiement');
+        await initierPaiementCinetPay(
+            amount,
+            'XOF',
+            `Recharge compte Sell Card`,
+            auth.currentUser.uid,
+            'recharge_self'
+        );
+    });
+
+    rechargeFriendBtn.addEventListener('click', async () => {
+        const amount = parseFloat(rechargeAmountFriend.value);
+        const id = friendId.value.trim();
+        const reason = friendReason.value.trim();
+        if (friendSource === 'internal') {
+            await transfertInterne(amount, auth.currentUser.uid, id, reason);
+        } else {
+            const method = selectedRechargeMethodFriend;
+            if (!method) return alert('Sélectionnez un moyen de paiement');
+            await initierPaiementCinetPay(
+                amount,
+                'XOF',
+                `Recharge ami ${id} - ${reason}`,
+                auth.currentUser.uid,
+                'recharge_friend',
+                id
+            );
+        }
+    });
+
+    // Gestion des cartes populaires et autres
+    const cartesRef = db.collection("cartes");
+    cartesRef.onSnapshot(snapshot => {
+        cartesMap.clear();
+        toutesLesCartes = [];
+        const popular = [];
+        const others = [];
+        snapshot.forEach(doc => {
+            const carte = { id: doc.id, ...doc.data() };
+            cartesMap.set(doc.id, carte);
+            toutesLesCartes.push(carte);
+            if (carte.populaire) popular.push(carte); else others.push(carte);
+        });
+        updatePopularGrid(popular.slice(0, 5));
+        updateOtherCardsList(others);
+        updateSellCatalog(toutesLesCartes);
+    });
+
+    function updatePopularGrid(cartes) {
+        let html = '';
+        cartes.forEach(carte => {
+            const tauxExemple = carte.tauxParPays?.['PRY'] || carte.taux || '0';
+            html += `<div class="popular-card" data-id="${carte.id}"><img src="${carte.logoUrl || ''}" alt="${carte.nom}"><div class="card-name">${carte.nom}</div><div class="card-rate">Taux: <span>${tauxExemple} F</span></div></div>`;
+        });
+        for (let i = cartes.length; i < 5; i++) html += `<div class="popular-card" style="opacity:0.5;"><div class="card-name">Bientôt</div></div>`;
+        html += `<div class="popular-card" id="moreCardsBtn"><i data-lucide="plus" style="width:30px;height:30px; color:#002366;"></i><div class="card-name">Autres</div></div>`;
+        popularGrid.innerHTML = html;
+        lucide.createIcons();
+        document.querySelectorAll('.popular-card[data-id]').forEach(card => {
+            card.addEventListener('click', () => {
+                const id = card.dataset.id;
+                ouvrirVentePourCarte(id);
+            });
+        });
+        document.getElementById('moreCardsBtn').addEventListener('click', () => {
+            otherCardsSheet.classList.add('active');
+            overlaySheet.classList.add('active');
+        });
+    }
+
+    function ouvrirVentePourCarte(id) {
+        const carte = cartesMap.get(id);
+        if (carte) {
+            selectedCard = carte;
+            selectedCardName.innerText = `Vendre ${selectedCard.nom}`;
+            sellFormDash.style.display = 'block';
+            updateCalc();
+            sellMenu.classList.add('active');
+            overlay.classList.add('active');
+        } else {
+            alert('Carte introuvable');
+        }
+    }
+
+    function updateSellCatalog(cartes) {
+        if (cartes.length === 0) {
+            sellCatalog.innerHTML = '<p style="text-align:center;">Aucune carte disponible</p>';
+            return;
+        }
+        let html = '';
+        cartes.forEach(carte => {
+            if (!carte.actif) return;
+            html += `<div class="sell-card-item" data-id="${carte.id}"><div class="sell-card-icon"><img src="${carte.logoUrl || ''}" style="width:30px;height:30px;"></div><div class="sell-card-info"><div class="sell-card-name">${carte.nom}</div><div class="sell-card-rate">Taux: <span>${carte.tauxParPays?.['PRY'] || '0'} FCFA</span></div><div class="sell-card-currency">Devise: ${carte.devise || 'USD'}</div></div></div>`;
+        });
+        sellCatalog.innerHTML = html;
+        lucide.createIcons();
+        document.querySelectorAll('.sell-card-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.dataset.id;
+                const carte = cartesMap.get(id);
+                if (carte) {
+                    document.querySelectorAll('.sell-card-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedCard = carte;
+                    selectedCardName.innerText = `Vendre ${selectedCard.nom}`;
+                    sellFormDash.style.display = 'block';
+                    updateCalc();
+                }
+            });
+        });
+    }
+
+    function updateOtherCardsList(cartes) {
+        if (cartes.length === 0) { otherCardsList.innerHTML = '<p style="text-align:center;">Aucune autre carte disponible</p>'; return; }
+        let html = '';
+        cartes.forEach(carte => {
+            html += `<div class="other-card-item" data-id="${carte.id}"><img src="${carte.logoUrl}" alt="${carte.nom}"><div>${carte.nom}</div><div style="font-size:11px; color:#28a745;">${carte.tauxParPays?.['PRY'] || '0'} F</div></div>`;
+        });
+        otherCardsList.innerHTML = html;
+        document.querySelectorAll('.other-card-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.dataset.id;
+                ouvrirVentePourCarte(id);
+            });
+        });
+    }
+
+    // Recherche
+    searchButton.addEventListener('click', () => {
+        searchInput.classList.add('visible');
+        clearSearch.classList.add('visible');
+        searchButton.style.display = 'none';
+        searchInput.focus();
+    });
+
+    clearSearch.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.classList.remove('visible');
+        clearSearch.classList.remove('visible');
+        searchButton.style.display = 'flex';
+        cartesRef.onSnapshot(snapshot => {
+            const toutes = [];
+            snapshot.forEach(doc => toutes.push({ id: doc.id, ...doc.data() }));
+            updateSellCatalog(toutes.filter(c => c.actif));
+            updatePopularGrid(toutes.filter(c => c.populaire).slice(0, 5));
+        });
+    });
+
+    searchInput.addEventListener('input', (e) => {
+        const terme = e.target.value.toLowerCase().trim();
+        if (terme === '') {
+            cartesRef.onSnapshot(snapshot => {
+                const toutes = [];
+                snapshot.forEach(doc => toutes.push({ id: doc.id, ...doc.data() }));
+                updateSellCatalog(toutes.filter(c => c.actif));
+                updatePopularGrid(toutes.filter(c => c.populaire).slice(0, 5));
+            });
+        } else {
+            const filtrees = toutesLesCartes.filter(c => c.nom.toLowerCase().includes(terme));
+            updateSellCatalog(filtrees);
+            updatePopularGrid(filtrees.filter(c => c.populaire).slice(0, 5));
+        }
+    });
+
+    const availableCardsQuery = cartesRef.where("actif", "==", true);
+    availableCardsQuery.onSnapshot(snapshot => {
+        const actives = [];
+        snapshot.forEach(doc => {
+            const carte = { id: doc.id, ...doc.data() };
+            actives.push(carte);
+        });
+        updateSellCatalog(actives);
+    });
+
+    function updateCalc() {
+        const amount = parseFloat(sellAmount.value);
+        const pays = paysProvenance.value;
+        if (!selectedCard || isNaN(amount) || amount <= 0 || !pays) {
+            sellReceive.innerText = '0';
+            sellSubmit.disabled = true;
+            return;
+        }
+        const taux = selectedCard.tauxParPays?.[pays];
+        if (!taux) {
+            sellReceive.innerText = 'Taux non défini';
+            sellSubmit.disabled = true;
+            return;
+        }
+        const montantEffectif = amount * 0.8;
+        let montantFCFA = montantEffectif * taux * (1 - commission);
+        sellReceive.innerText = montantFCFA.toFixed(0);
+        
+        const codeOk = sellCode.value.trim() !== '';
+        sellSubmit.disabled = !(codeOk && pays);
+    }
+    sellAmount.addEventListener('input', updateCalc);
+    sellCode.addEventListener('input', updateCalc);
+    paysProvenance.addEventListener('change', updateCalc);
+
+    sellSubmit.addEventListener('click', async () => {
+        if (!selectedCard) return;
+        const user = auth.currentUser;
+        if (!user) return;
+        const amount = parseFloat(sellAmount.value);
+        const code = sellCode.value.trim();
+        const pays = paysProvenance.value;
+        const photoFile = sellPhoto.files[0];
+        
+        const taux = selectedCard.tauxParPays?.[pays];
+        if (!taux) {
+            alert('Taux non défini pour ce pays');
+            return;
+        }
+
+        const montantEffectif = amount * 0.8;
+        const montantFCFA = montantEffectif * taux * (1 - commission);
+        
+        const transactionData = {
+            userId: user.uid,
+            carteId: selectedCard.id,
+            carteNom: selectedCard.nom,
+            montantOriginal: amount,
+            montantEffectif: montantEffectif,
+            deviseOriginal: selectedCard.devise,
+            montantFCFA: montantFCFA,
+            code: code,
+            paysProvenance: pays,
+            tauxApplique: taux,
+            statut: "en_cours",
+            date: new Date(),
+            progression: 0
+        };
+        if (photoFile) {
+            const storageRef = storage.ref(`ventes/${user.uid}/${Date.now()}_${photoFile.name}`);
+            await storageRef.put(photoFile);
+            transactionData.photoURL = await storageRef.getDownloadURL();
+        }
+        const docRef = await db.collection("transactions").add(transactionData);
+        sellProgress.style.display = 'block';
+        sellSubmit.disabled = true;
+
+        db.collection("transactions").doc(docRef.id).onSnapshot(async (doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.statut === "approuvé") {
+                    sellProgressFill.style.width = "100%";
+                    alert("Vente approuvée ! Votre solde a été mis à jour.");
+
+                    const userRef = db.collection('utilisateurs').doc(user.uid);
+                    await userRef.update({
+                        solde: firebase.firestore.FieldValue.increment(parseFloat(data.montantFCFA))
+                    });
+
+                    const userDoc = await userRef.get();
+                    if (userDoc.exists && userDoc.data().parrain) {
+                        const parrainId = userDoc.data().parrain;
+                        const parrainRef = db.collection('utilisateurs').doc(parrainId);
+                        const parrainDoc = await parrainRef.get();
+                        if (parrainDoc.exists) {
+                            const totalParrainage = parrainDoc.data().totalParrainage || 0;
+                            if (totalParrainage < 10000) {
+                                const reste = 10000 - totalParrainage;
+                                const aAjouter = Math.min(250, reste);
+                                await parrainRef.update({
+                                    solde: firebase.firestore.FieldValue.increment(aAjouter),
+                                    totalParrainage: firebase.firestore.FieldValue.increment(aAjouter)
+                                });
+                                await db.collection('notifications').add({
+                                    userId: parrainId,
+                                    titre: 'Gain de parrainage',
+                                    message: `Vous avez gagné ${aAjouter} FCFA grâce à une vente de votre filleul.`,
+                                    type: 'transaction',
+                                    statut: 'success',
+                                    lu: false,
+                                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                                    icone: 'gift'
+                                });
+                            }
+                        }
+                    }
+
+                    sellFormDash.style.display = 'none';
+                    document.querySelectorAll('.sell-card-item.selected').forEach(el => el.classList.remove('selected'));
+                    selectedCard = null;
+                    sellProgress.style.display = 'none';
+                } else if (data.statut === "refusé") {
+                    alert("Vente refusée.");
+                    sellProgress.style.display = 'none';
+                } else {
+                    sellProgressFill.style.width = "50%";
+                }
+            }
+        });
+    });
+
+    const balanceSpan = document.getElementById('balance-value');
+    const idBadge = document.getElementById('user-id-public');
+    const toggleBtn = document.getElementById('toggle-visibility');
+    let isHidden = false;
+    toggleBtn.addEventListener('click', () => {
+        isHidden = !isHidden;
+        balanceSpan.innerText = isHidden ? "****" : `${realBalance} ${currency}`;
+        idBadge.innerText = isHidden ? "ID: ********" : `ID: ${realID}`;
+        toggleBtn.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+        lucide.createIcons();
+    });
+
+    // ========== FONCTIONS RELOADLY ==========
+    async function getReloadlyToken() {
+        const response = await fetch('https://auth.reloadly.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: RELOADLY_CLIENT_ID,
+                client_secret: RELOADLY_CLIENT_SECRET,
+                audience: 'https://giftcards.reloadly.com',
+                grant_type: 'client_credentials'
+            })
+        });
+        const data = await response.json();
+        return data.access_token;
+    }
+
+    async function chargerCatalogueReloadly() {
+        buyCatalog.innerHTML = '<p class="loading">Chargement du catalogue Reloadly...</p>';
+        try {
+            const token = await getReloadlyToken();
+            const response = await fetch('https://giftcards.reloadly.com/products?page=1&size=50&countryCode=CI', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            tousLesProduits = data.content || [];
+            
+            if (tousLesProduits.length === 0) {
+                buyCatalog.innerHTML = '<p style="text-align:center; color:#999;">Aucun produit disponible pour le moment.</p>';
+                return;
+            }
+
+            afficherCatalogue(tousLesProduits);
+        } catch (error) {
+            console.error('Erreur chargement catalogue Reloadly:', error);
+            buyCatalog.innerHTML = '<p style="color:red;">Erreur de chargement du catalogue.</p>';
+        }
+    }
+
+    function afficherCatalogue(produits) {
+        let html = '';
+        produits.forEach(prod => {
+            const prix = prod.denominations?.[0] || 'Prix non disponible';
+            html += `
+                <div class="buy-product-item" data-id="${prod.productId}">
+                    <div class="buy-product-icon"><img src="${prod.logoUrls?.[0] || ''}" style="width:30px;height:30px;"></div>
+                    <div class="buy-product-info">
+                        <div class="buy-product-name">${prod.productName}</div>
+                        <div class="buy-product-details">${prod.shortDescription || ''}</div>
+                        <div class="buy-product-price">${prix} ${prod.currencyCode}</div>
+                    </div>
+                    <div class="buy-product-actions">
+                        <button class="add-to-cart-btn" data-prod='${JSON.stringify(prod)}'>Ajouter</button>
+                    </div>
+                </div>
+            `;
+        });
+        buyCatalog.innerHTML = html;
+        lucide.createIcons();
+
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const prod = JSON.parse(btn.dataset.prod);
+                ajouterAuPanier(prod);
+            });
+        });
+    }
+
+    // Recherche dans le catalogue
+    buySearch.addEventListener('input', (e) => {
+        const terme = e.target.value.toLowerCase();
+        if (terme === '') {
+            afficherCatalogue(tousLesProduits);
+        } else {
+            const filtres = tousLesProduits.filter(p => 
+                p.productName.toLowerCase().includes(terme)
+            );
+            afficherCatalogue(filtres);
+        }
+    });
+
+    // Achat pour moi-même (désormais via le panier)
+    confirmBuyForMe.addEventListener('click', async () => {
+        if (panier.length === 0) return alert('Votre panier est vide');
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+        const metadata = {
+            type: 'panier_self',
+            articles: panier.map(p => ({
+                productId: p.productId,
+                productName: p.nom,
+                unitPrice: p.prix,
+                currency: p.devise,
+                quantity: p.quantite
+            }))
+        };
+
+        await initierPaiementCinetPay(
+            total,
+            'XOF',
+            `Achat groupé (${panier.length} articles)`,
+            user.uid,
+            'achat_reloadly',
+            metadata
+        );
+
+        panier = [];
+        mettreAJourPanier();
+        cartPanel.style.display = 'none';
+        buyDetail.style.display = 'none';
+    });
+
+    // Offrir à un proche
+    confirmGift.addEventListener('click', async () => {
+        if (panier.length === 0) return alert('Votre panier est vide');
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const destinataire = recipientId.value.trim();
+        if (!destinataire) {
+            alert('Veuillez saisir l\'ID du destinataire');
+            return;
+        }
+        const motif = giftReason.value.trim();
+        if (!motif) {
+            alert('Veuillez saisir un motif pour le cadeau');
+            return;
+        }
+
+        const destSnapshot = await db.collection('utilisateurs').where('idPublic', '==', destinataire).get();
+        if (destSnapshot.empty) {
+            alert('ID destinataire invalide ou inexistant');
+            return;
+        }
+        const destDoc = destSnapshot.docs[0];
+
+        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+        const metadata = {
+            type: 'panier_gift',
+            recipientId: destinataire,
+            recipientUid: destDoc.id,
+            reason: motif,
+            articles: panier.map(p => ({
+                productId: p.productId,
+                productName: p.nom,
+                unitPrice: p.prix,
+                currency: p.devise,
+                quantity: p.quantite
+            }))
+        };
+
+        await initierPaiementCinetPay(
+            total,
+            'XOF',
+            `Cadeau pour ${destinataire}`,
+            user.uid,
+            'achat_reloadly',
+            metadata
+        );
+
+        panier = [];
+        mettreAJourPanier();
+        cartPanel.style.display = 'none';
+        giftDetail.style.display = 'none';
+        recipientId.value = '';
+        giftReason.value = '';
+    });
+
+    // Demander un cadeau
+    generateRequestLink.addEventListener('click', () => {
+        if (!selectedProduct) return alert('Sélectionnez un produit');
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const message = requestMessage.value.trim() || 'Cadeau pour moi';
+        const linkId = 'REQ_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+        
+        db.collection('demandes_cadeau').doc(linkId).set({
+            userId: user.uid,
+            productId: selectedProduct.productId,
+            productName: selectedProduct.productName,
+            message: message,
+            date: firebase.firestore.FieldValue.serverTimestamp(),
+            utilisé: false
+        });
+
+        const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+        const fullLink = `${baseUrl}?cadeau=${linkId}`;
+        requestLink.innerText = fullLink;
+        requestLinkContainer.style.display = 'flex';
+    });
+
+    copyRequestLink.addEventListener('click', () => {
+        navigator.clipboard.writeText(requestLink.innerText).then(() => {
+            alert('Lien copié !');
+        });
+    });
+
+    // ========== Écouter l'utilisateur connecté ==========
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userRef = db.collection('utilisateurs').doc(user.uid);
+            const docSnap = await userRef.get();
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                realBalance = data.solde || "0";
+                realID = data.idPublic || "à définir";
+                currency = (data.pays === "FR") ? "€" : (data.pays === "US") ? "$" : "FCFA";
+                balanceSpan.innerText = `${realBalance} ${currency}`;
+                idBadge.innerText = `ID: ${realID}`;
+
+                document.getElementById('profileName').innerText = user.displayName || "Utilisateur";
+                document.getElementById('profileEmail').innerText = user.email || "xxxxxxxxxx";
+                if (user.photoURL) document.getElementById('profilePic').src = user.photoURL;
+
+                // Notifications
+                db.collection("notifications").where("userId", "==", user.uid).orderBy("timestamp", "desc").onSnapshot(snapshot => {
+                    const list = document.getElementById('notificationsList');
+                    const hasUnread = snapshot.docs.some(d => d.data().lu === false);
+                    notificationDot.classList.toggle('active', hasUnread);
+                    if (snapshot.empty) {
+                        list.innerHTML = `<div class="empty-notifications"><i data-lucide="bell" style="width: 40px; height: 40px; color: #ccc; margin-bottom: 10px;"></i><p>Aucune notification</p></div>`;
+                    } else {
+                        let html = '';
+                        snapshot.forEach(doc => {
+                            const n = doc.data();
+                            const statusClass = n.type === 'promo' ? 'status-promo' : n.statut === 'success' ? 'status-success' : n.statut === 'pending' ? 'status-pending' : 'status-failed';
+                            html += `<div class="notification-item ${!n.lu ? 'unread' : ''}"><div class="notification-icon"><i data-lucide="${n.icone || 'bell'}"></i></div><div class="notification-content"><div class="notification-title">${n.titre || ''}</div><div>${n.message || ''}</div><div class="notification-time">${n.timestamp?.toDate().toLocaleString() || ''}</div>${n.statut ? `<span class="notification-status ${statusClass}">${n.statut}</span>` : ''}</div></div>`;
+                        });
+                        list.innerHTML = html;
+                    }
+                    lucide.createIcons();
+                });
+
+                // Moyens de paiement
+                const methodsRef = userRef.collection('moyensPaiement');
+                methodsRef.onSnapshot(snapshot => {
+                    if (snapshot.empty) {
+                        paymentMethodsList.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen enregistré</p>';
+                    } else {
+                        let html = '';
+                        snapshot.forEach(doc => {
+                            const m = doc.data();
+                            const icon = m.type === 'mobile_money' ? 'smartphone' : (m.type === 'wave' ? 'zap' : (m.type === 'paypal' ? 'paypal' : 'credit-card'));
+                            const typeName = m.type === 'mobile_money' ? 'Mobile Money' : (m.type === 'wave' ? 'Wave' : (m.type === 'paypal' ? 'PayPal' : 'Carte'));
+                            const maskedNum = m.numero.length > 4 ? '••••' + m.numero.slice(-4) : '••••';
+                            html += `<div class="payment-method-item"><div class="payment-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
+                        });
+                        paymentMethodsList.innerHTML = html;
+                        lucide.createIcons();
+                    }
+                    const methodsArray = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    userMethods = methodsArray;
+                    updateWithdrawMethodsList(methodsArray);
+                    updateRechargeMethodsList(methodsArray);
+                });
+
+                // Historique (transactions approuvées)
+                db.collection("transactions").where("userId", "==", user.uid).where("statut", "==", "approuvé").orderBy("date", "desc").onSnapshot(snapshot => {
+                    if (snapshot.empty) {
+                        historyList.innerHTML = `<div class="empty-history"><i data-lucide="clock" style="width:40px;height:40px;color:#ccc;"></i><p>Aucune transaction approuvée</p></div>`;
+                    } else {
+                        let html = '';
+                        snapshot.forEach(doc => {
+                            const tx = doc.data();
+                            const icon = tx.carteNom?.includes('PayPal') ? 'paypal' : 'credit-card';
+                            const title = tx.carteNom || 'Carte';
+                            html += `<div class="history-item"><div class="history-icon"><i data-lucide="${icon}"></i></div><div class="history-details"><div class="history-title">${title}</div><div class="history-subtitle">Code: ${tx.code}</div><div class="history-amount">${tx.montantFCFA} FCFA</div><div class="history-date">${tx.date?.toDate().toLocaleString() || ''}</div></div></div>`;
+                        });
+                        historyList.innerHTML = html;
+                        lucide.createIcons();
+                    }
+                });
+
+                // Commandes (ventes + achats + cadeaux)
+                Promise.all([
+                    db.collection('transactions').where('userId', '==', user.uid).orderBy('date', 'desc').get(),
+                    db.collection('achats').where('userId', '==', user.uid).orderBy('date', 'desc').get(),
+                    db.collection('cadeaux_recus').where('userId', '==', user.uid).orderBy('date', 'desc').get()
+                ]).then(([ventesSnap, achatsSnap, cadeauxSnap]) => {
+                    const ventes = ventesSnap.docs.map(doc => ({ 
+                        type: 'vente', 
+                        id: doc.id,
+                        ...doc.data() 
+                    }));
+                    const achats = achatsSnap.docs.map(doc => ({ 
+                        type: 'achat', 
+                        id: doc.id,
+                        ...doc.data() 
+                    }));
+                    const cadeaux = cadeauxSnap.docs.map(doc => ({ 
+                        type: 'cadeau', 
+                        id: doc.id,
+                        ...doc.data() 
+                    }));
+                    const toutesCommandes = [...ventes, ...achats, ...cadeaux].sort((a, b) => {
+                        const dateA = a.date ? a.date.toDate() : new Date(0);
+                        const dateB = b.date ? b.date.toDate() : new Date(0);
+                        return dateB - dateA;
+                    });
+
+                    if (toutesCommandes.length === 0) {
+                        ordersList.innerHTML = `<div class="empty-orders"><i data-lucide="package" style="width:40px;height:40px;color:#ccc;"></i><p>Aucune commande</p></div>`;
+                    } else {
+                        let html = '';
+                        toutesCommandes.forEach(item => {
+                            if (item.type === 'vente') {
+                                const statusClass = item.statut === 'approuvé' ? 'status-approved' : (item.statut === 'refusé' ? 'status-rejected' : 'status-pending');
+                                html += `<div class="order-item"><div class="order-icon"><i data-lucide="credit-card"></i></div><div class="order-details"><div class="order-title">Vente : ${item.carteNom || ''}</div><div class="order-subtitle">Code: ${item.code || ''}</div><div class="order-amount">${item.montantFCFA || 0} FCFA</div><div class="order-date">${item.date?.toDate().toLocaleString() || ''}</div><span class="order-status ${statusClass}">${item.statut || 'en attente'}</span></div></div>`;
+                            } else if (item.type === 'achat') {
+                                html += `<div class="order-item"><div class="order-icon"><i data-lucide="shopping-cart"></i></div><div class="order-details"><div class="order-title">Achat : ${item.carteNom || ''}</div><div class="order-subtitle">Code: ${item.code || ''}</div><div class="order-amount">${item.montant || 0} FCFA</div><div class="order-date">${item.date?.toDate().toLocaleString() || ''}</div><span class="order-status status-success">Livré</span></div></div>`;
+                            } else {
+                                const dejaAffiche = item.codeVisible || false;
+                                const boutons = !dejaAffiche ? `
+                                    <div class="gift-actions">
+                                        <button class="gift-action-btn show" onclick="afficherCodeCadeau('${item.id}')">Afficher le code</button>
+                                        <button class="gift-action-btn cash" onclick="encaisserCadeau('${item.id}')">Encaisser</button>
+                                    </div>
+                                ` : `<div class="gift-actions"><button class="gift-action-btn show" disabled>Code déjà affiché</button></div>`;
+                                html += `<div class="order-item gift-received"><div class="order-icon"><i data-lucide="gift"></i></div><div class="order-details"><div class="order-title">🎁 Cadeau : ${item.carteNom}</div><div class="order-subtitle">De: ${item.expediteurId} - "${item.motif}"</div><div class="order-amount">${item.montant || 0} FCFA</div>${boutons}</div></div>`;
+                            }
+                        });
+                        ordersList.innerHTML = html;
+                        lucide.createIcons();
+                    }
+                }).catch(error => {
+                    console.error("Erreur lors du chargement des commandes:", error);
+                    ordersList.innerHTML = '<div class="empty-orders">Erreur de chargement</div>';
+                });
+            } else {
+                balanceSpan.innerText = "0 FCFA";
+                idBadge.innerText = "ID: à définir";
+            }
+        } else {
+            // Non connecté
+        }
+    });
+
+    // Fonctions pour les cadeaux
+    window.afficherCodeCadeau = async (id) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        const docRef = db.collection('cadeaux_recus').doc(id);
+        const doc = await docRef.get();
+        if (doc.exists) {
+            const data = doc.data();
+            alert(`Code de la carte : ${data.code}`);
+            await docRef.update({ codeVisible: true });
+            location.reload();
+        }
+    };
+
+    // Fonction d'encaissement avec tauxRachat
+    window.encaisserCadeau = async (id) => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const cadeauRef = db.collection('cadeaux_recus').doc(id);
+        const cadeau = await cadeauRef.get();
+        const data = cadeau.data();
+
+        // Récupérer les infos de la carte pour le tauxRachat
+        const carteSnapshot = await db.collection('cartes').where('nom', '==', data.carteNom).get();
+        if (carteSnapshot.empty) {
+            alert('Carte non trouvée');
+            return;
+        }
+        const carte = carteSnapshot.docs[0].data();
+        const tauxRachat = carte.tauxRachat || 0.8; // Valeur par défaut 80%
+
+        // Calculer le montant (exemple : valeur * 600 * tauxRachat)
+        const montantFCFA = data.valeur * 600 * tauxRachat;
+
+        // Créditer l'utilisateur
+        await db.collection('utilisateurs').doc(user.uid).update({
+            solde: firebase.firestore.FieldValue.increment(montantFCFA)
+        });
+
+        // Marquer le cadeau comme encaissé
+        await cadeauRef.update({ encaisse: true, codeVisible: true });
+
+        alert(`Encaissement réussi ! +${montantFCFA} FCFA sur votre solde.`);
+        location.reload();
+    };
+
+    // Système d'accordéon pour la FAQ
+    document.querySelectorAll('.faq-question').forEach(q => {
+        q.addEventListener('click', () => {
+            const card = q.parentElement;
+            const isActive = card.classList.contains('active');
+            document.querySelectorAll('.faq-card').forEach(c => c.classList.remove('active'));
+            if (!isActive) card.classList.add('active');
+        });
+    });
+
+    lucide.createIcons();
+</script>
+</body>
+</html>
