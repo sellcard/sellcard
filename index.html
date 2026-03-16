@@ -336,7 +336,7 @@
             position: fixed;
             background: white;
             z-index: 2000;
-            transition: all 0.3s ease-out;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow-y: auto;
         }
@@ -379,7 +379,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             z-index: 1999;
             display: none;
         }
@@ -932,7 +934,23 @@
             border-radius: 20px;
             margin-bottom: 10px;
             border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
         }
+        .buy-product-item.selected {
+            border-color: #002366;
+            background: #e6f0ff;
+        }
+        .buy-product-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e6f0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .buy-product-icon img { width: 30px; height: 30px; object-fit: contain; }
         .buy-product-info { flex: 1; }
         .buy-product-name { font-weight: bold; }
         .buy-product-details { font-size: 12px; color: #666; }
@@ -949,13 +967,6 @@
             border-radius: 30px;
             cursor: pointer;
             font-size: 12px;
-        }
-        .quantity-select {
-            width: 60px;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            text-align: center;
         }
 
         .cart-panel {
@@ -1558,7 +1569,7 @@
     <!-- Tous les menus glissants (cachés) -->
     <div class="overlay" id="overlay"></div>
     
-    <!-- Menu paramètres (inchangé) -->
+    <!-- Menu paramètres -->
     <div class="settings-menu" id="settingsMenu">
         <div class="settings-header">
             <i data-lucide="x" class="close-menu" id="closeMenu"></i>
@@ -1865,7 +1876,7 @@
         </div>
     </div>
     
-    <!-- Menu Vendre (inchangé) -->
+    <!-- Menu Vendre -->
     <div class="sell-menu" id="sellMenu">
         <div class="sell-header">
             <h2>Vendre une carte</h2>
@@ -2373,50 +2384,54 @@
     const langSelect = document.getElementById('lang-select');
     const parrainCode = document.getElementById('parrainCode');
 
-    termsCheck.addEventListener('change', function() {
-        googleBtn.disabled = !this.checked;
-    });
+    if (termsCheck) {
+        termsCheck.addEventListener('change', function() {
+            if (googleBtn) googleBtn.disabled = !this.checked;
+        });
+    }
 
-    googleBtn.addEventListener('click', function() {
-        const country = countrySelector.value;
-        if (!country) {
-            alert("⚠️ Veuillez d'abord sélectionner votre pays.");
-            return;
-        }
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider)
-            .then(async (result) => {
-                const user = result.user;
-                const userRef = db.collection('utilisateurs').doc(user.uid);
-                const doc = await userRef.get();
-                if (!doc.exists) {
-                    const idPublic = await genererIdPublicUnique(db);
-                    const userData = {
-                        solde: "0",
-                        idPublic: idPublic,
-                        pays: country,
-                        email: user.email,
-                        nom: user.displayName || "",
-                        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-                    };
+    if (googleBtn) {
+        googleBtn.addEventListener('click', function() {
+            const country = countrySelector ? countrySelector.value : null;
+            if (!country) {
+                alert("⚠️ Veuillez d'abord sélectionner votre pays.");
+                return;
+            }
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then(async (result) => {
+                    const user = result.user;
+                    const userRef = db.collection('utilisateurs').doc(user.uid);
+                    const doc = await userRef.get();
+                    if (!doc.exists) {
+                        const idPublic = await genererIdPublicUnique(db);
+                        const userData = {
+                            solde: "0",
+                            idPublic: idPublic,
+                            pays: country,
+                            email: user.email,
+                            nom: user.displayName || "",
+                            dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                        };
 
-                    const codeSaisi = parrainCode.value.trim();
-                    if (codeSaisi) {
-                        const parrainSnapshot = await db.collection('utilisateurs').where('idPublic', '==', codeSaisi).get();
-                        if (!parrainSnapshot.empty) {
-                            const parrainDoc = parrainSnapshot.docs[0];
-                            userData.parrain = parrainDoc.id;
+                        const codeSaisi = parrainCode ? parrainCode.value.trim() : '';
+                        if (codeSaisi) {
+                            const parrainSnapshot = await db.collection('utilisateurs').where('idPublic', '==', codeSaisi).get();
+                            if (!parrainSnapshot.empty) {
+                                const parrainDoc = parrainSnapshot.docs[0];
+                                userData.parrain = parrainDoc.id;
+                            }
                         }
+                        await userRef.set(userData);
                     }
-                    await userRef.set(userData);
-                }
-                window.location.reload();
-            })
-            .catch((error) => {
-                console.error("Erreur d'authentification :", error);
-                alert("Erreur : " + error.message);
-            });
-    });
+                    window.location.reload();
+                })
+                .catch((error) => {
+                    console.error("Erreur d'authentification :", error);
+                    alert("Erreur : " + error.message);
+                });
+        });
+    }
 
     const translations = {
         fr: { title: "SELL CARD", slogan: "Vente de cartes et transfert d'argent", countryLabel: "Sélectionnez votre pays (Langue & Monnaie)", terms: "J'accepte les conditions d'utilisation de Sell Card", googleBtn: "Continuer avec Google", security: "Toute transaction chez Sell Card est 100% anonyme" },
@@ -2426,14 +2441,22 @@
         pt: { title: "SELL CARD", slogan: "Venda de cartões e transferência de dinheiro", countryLabel: "Selecione seu país (Idioma e Moeda)", terms: "Aceito os termos de uso do Sell Card", googleBtn: "Continuar com Google", security: "Todas as transações na Sell Card são 100% anônimas" }
     };
     function changeLanguage(lang) {
-        document.getElementById('dynamic-title').textContent = translations[lang].title;
-        document.getElementById('dynamic-slogan').textContent = translations[lang].slogan;
-        document.getElementById('country-label').textContent = translations[lang].countryLabel;
-        document.getElementById('terms-label').textContent = translations[lang].terms;
-        document.getElementById('google-btn-text').textContent = translations[lang].googleBtn;
-        document.getElementById('security-text').textContent = translations[lang].security;
+        const titleEl = document.getElementById('dynamic-title');
+        const sloganEl = document.getElementById('dynamic-slogan');
+        const countryLabelEl = document.getElementById('country-label');
+        const termsLabelEl = document.getElementById('terms-label');
+        const googleBtnText = document.getElementById('google-btn-text');
+        const securityText = document.getElementById('security-text');
+        if (titleEl) titleEl.textContent = translations[lang].title;
+        if (sloganEl) sloganEl.textContent = translations[lang].slogan;
+        if (countryLabelEl) countryLabelEl.textContent = translations[lang].countryLabel;
+        if (termsLabelEl) termsLabelEl.textContent = translations[lang].terms;
+        if (googleBtnText) googleBtnText.textContent = translations[lang].googleBtn;
+        if (securityText) securityText.textContent = translations[lang].security;
     }
-    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    if (langSelect) {
+        langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    }
     changeLanguage('fr');
 
     // ========== CODE DU DASHBOARD ==========
@@ -2595,75 +2618,130 @@
         if (doc.exists) commission = doc.data().taux || 0.012;
     });
 
-    // Fonctions d'ouverture/fermeture des menus (inchangées)
-    menuButton.addEventListener('click', () => { settingsMenu.classList.add('active'); overlay.classList.add('active'); });
-    notificationsButton.addEventListener('click', () => { notificationsMenu.classList.add('active'); overlay.classList.add('active'); notificationDot.classList.remove('active'); });
-    accountButton.addEventListener('click', () => { paymentMenu.classList.add('active'); overlay.classList.add('active'); });
-    withdrawButton.addEventListener('click', () => { withdrawMenu.classList.add('active'); overlay.classList.add('active'); });
-    historyButton.addEventListener('click', () => { historyMenu.classList.add('active'); overlay.classList.add('active'); });
-    rechargeButton.addEventListener('click', () => { rechargeMenu.classList.add('active'); overlay.classList.add('active'); });
-    ordersButton.addEventListener('click', () => { ordersMenu.classList.add('active'); overlay.classList.add('active'); });
-    sellButton.addEventListener('click', () => { sellMenu.classList.add('active'); overlay.classList.add('active'); });
-    homeButton.addEventListener('click', () => { location.reload(); });
+    // Fonctions d'ouverture/fermeture des menus avec vérification d'existence
+    if (menuButton) {
+        menuButton.addEventListener('click', () => {
+            if (settingsMenu) settingsMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (notificationsButton) {
+        notificationsButton.addEventListener('click', () => {
+            if (notificationsMenu) notificationsMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+            if (notificationDot) notificationDot.classList.remove('active');
+        });
+    }
+    if (accountButton) {
+        accountButton.addEventListener('click', () => {
+            if (paymentMenu) paymentMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (withdrawButton) {
+        withdrawButton.addEventListener('click', () => {
+            if (withdrawMenu) withdrawMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (historyButton) {
+        historyButton.addEventListener('click', () => {
+            if (historyMenu) historyMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (rechargeButton) {
+        rechargeButton.addEventListener('click', () => {
+            if (rechargeMenu) rechargeMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (ordersButton) {
+        ordersButton.addEventListener('click', () => {
+            if (ordersMenu) ordersMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (sellButton) {
+        sellButton.addEventListener('click', () => {
+            if (sellMenu) sellMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+    if (homeButton) {
+        homeButton.addEventListener('click', () => { location.reload(); });
+    }
 
     // Ouvrir le menu Acheter
-    buyButton.addEventListener('click', () => {
-        buyMenu.classList.add('active');
-        overlay.classList.add('active');
-        buyCatalogContainer.style.display = 'none';
-        buyDetail.style.display = 'none';
-        giftDetail.style.display = 'none';
-        requestDetail.style.display = 'none';
-        cartPanel.style.display = 'none';
-        selectedProduct = null;
-        currentBuyMode = null;
-    });
+    if (buyButton) {
+        buyButton.addEventListener('click', () => {
+            if (buyMenu) buyMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+            if (buyCatalogContainer) buyCatalogContainer.style.display = 'none';
+            if (buyDetail) buyDetail.style.display = 'none';
+            if (giftDetail) giftDetail.style.display = 'none';
+            if (requestDetail) requestDetail.style.display = 'none';
+            if (cartPanel) cartPanel.style.display = 'none';
+            selectedProduct = null;
+            currentBuyMode = null;
+        });
+    }
 
-    closeBuy.addEventListener('click', () => {
-        buyMenu.classList.remove('active');
-        overlay.classList.remove('active');
-    });
+    if (closeBuy) {
+        closeBuy.addEventListener('click', () => {
+            if (buyMenu) buyMenu.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        });
+    }
 
     // Options du menu Acheter
-    buyForMeOption.addEventListener('click', () => {
-        currentBuyMode = 'self';
-        chargerCatalogueReloadly();
-        buyCatalogContainer.style.display = 'block';
-        giftDetail.style.display = 'none';
-        requestDetail.style.display = 'none';
-        buyDetail.style.display = 'none';
-        cartPanel.style.display = 'none';
-    });
+    if (buyForMeOption) {
+        buyForMeOption.addEventListener('click', () => {
+            currentBuyMode = 'self';
+            chargerCatalogueReloadly();
+            if (buyCatalogContainer) buyCatalogContainer.style.display = 'block';
+            if (giftDetail) giftDetail.style.display = 'none';
+            if (requestDetail) requestDetail.style.display = 'none';
+            if (buyDetail) buyDetail.style.display = 'none';
+            if (cartPanel) cartPanel.style.display = 'none';
+        });
+    }
 
-    buyForGiftOption.addEventListener('click', () => {
-        currentBuyMode = 'gift';
-        chargerCatalogueReloadly();
-        buyCatalogContainer.style.display = 'block';
-        giftDetail.style.display = 'none';
-        requestDetail.style.display = 'none';
-        buyDetail.style.display = 'none';
-        cartPanel.style.display = 'none';
-    });
+    if (buyForGiftOption) {
+        buyForGiftOption.addEventListener('click', () => {
+            currentBuyMode = 'gift';
+            chargerCatalogueReloadly();
+            if (buyCatalogContainer) buyCatalogContainer.style.display = 'block';
+            if (giftDetail) giftDetail.style.display = 'none';
+            if (requestDetail) requestDetail.style.display = 'none';
+            if (buyDetail) buyDetail.style.display = 'none';
+            if (cartPanel) cartPanel.style.display = 'none';
+        });
+    }
 
-    requestGiftOption.addEventListener('click', () => {
-        currentBuyMode = 'request';
-        chargerCatalogueReloadly();
-        buyCatalogContainer.style.display = 'block';
-        giftDetail.style.display = 'none';
-        requestDetail.style.display = 'none';
-        buyDetail.style.display = 'none';
-        cartPanel.style.display = 'none';
-    });
+    if (requestGiftOption) {
+        requestGiftOption.addEventListener('click', () => {
+            currentBuyMode = 'request';
+            chargerCatalogueReloadly();
+            if (buyCatalogContainer) buyCatalogContainer.style.display = 'block';
+            if (giftDetail) giftDetail.style.display = 'none';
+            if (requestDetail) requestDetail.style.display = 'none';
+            if (buyDetail) buyDetail.style.display = 'none';
+            if (cartPanel) cartPanel.style.display = 'none';
+        });
+    }
 
     // Panier
-    cartIcon.addEventListener('click', () => {
-        if (panier.length === 0) {
-            alert('Votre panier est vide');
-            return;
-        }
-        afficherPanier();
-        cartPanel.style.display = 'block';
-    });
+    if (cartIcon) {
+        cartIcon.addEventListener('click', () => {
+            if (panier.length === 0) {
+                alert('Votre panier est vide');
+                return;
+            }
+            afficherPanier();
+            if (cartPanel) cartPanel.style.display = 'block';
+        });
+    }
 
     function ajouterAuPanier(produit) {
         const prix = produit.denominations?.[0] || 0;
@@ -2684,61 +2762,65 @@
 
     function mettreAJourPanier() {
         const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
-        cartCount.innerText = panier.length;
-        if (panier.length === 0) {
+        if (cartCount) cartCount.innerText = panier.length;
+        if (panier.length === 0 && cartPanel) {
             cartPanel.style.display = 'none';
         }
     }
 
     function afficherPanier() {
         let html = '';
-        panier.forEach((item, index) => {
+        panier.forEach((item) => {
             html += `<div class="cart-item">
                 <span>${item.nom} x${item.quantite}</span>
                 <span>${(item.prix * item.quantite * 600).toFixed(0)} FCFA</span>
             </div>`;
         });
-        cartItems.innerHTML = html;
+        if (cartItems) cartItems.innerHTML = html;
         const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
-        cartTotal.innerText = `Total: ${total.toFixed(0)} FCFA`;
+        if (cartTotal) cartTotal.innerText = `Total: ${total.toFixed(0)} FCFA`;
     }
 
-    clearCartBtn.addEventListener('click', () => {
-        panier = [];
-        mettreAJourPanier();
-        cartPanel.style.display = 'none';
-    });
+    if (clearCartBtn) {
+        clearCartBtn.addEventListener('click', () => {
+            panier = [];
+            mettreAJourPanier();
+            if (cartPanel) cartPanel.style.display = 'none';
+        });
+    }
 
-    checkoutBtn.addEventListener('click', async () => {
-        if (panier.length === 0) return;
-        const user = auth.currentUser;
-        if (!user) return;
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', async () => {
+            if (panier.length === 0) return;
+            const user = auth.currentUser;
+            if (!user) return;
 
-        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
-        const metadata = {
-            type: 'panier',
-            articles: panier.map(p => ({
-                productId: p.productId,
-                productName: p.nom,
-                unitPrice: p.prix,
-                currency: p.devise,
-                quantity: p.quantite
-            }))
-        };
+            const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+            const metadata = {
+                type: 'panier',
+                articles: panier.map(p => ({
+                    productId: p.productId,
+                    productName: p.nom,
+                    unitPrice: p.prix,
+                    currency: p.devise,
+                    quantity: p.quantite
+                }))
+            };
 
-        await initierPaiementCinetPay(
-            total,
-            'XOF',
-            `Achat groupé (${panier.length} articles)`,
-            user.uid,
-            'achat_reloadly',
-            metadata
-        );
+            await initierPaiementCinetPay(
+                total,
+                'XOF',
+                `Achat groupé (${panier.length} articles)`,
+                user.uid,
+                'achat_reloadly',
+                metadata
+            );
 
-        panier = [];
-        mettreAJourPanier();
-        cartPanel.style.display = 'none';
-    });
+            panier = [];
+            mettreAJourPanier();
+            if (cartPanel) cartPanel.style.display = 'none';
+        });
+    }
 
     // Éléments du menu parrainage et conditions
     const parrainageButton = document.getElementById('parrainageButton');
@@ -2761,59 +2843,76 @@
     const closeFaq = document.getElementById('closeFaq');
 
     // Ouvrir le menu parrainage
-    parrainageButton.addEventListener('click', () => {
-        parrainageMenu.classList.add('active');
-        overlay.classList.add('active');
-        chargerDonneesParrainage();
-    });
-
-    closeParrainage.addEventListener('click', () => {
-        parrainageMenu.classList.remove('active');
-        overlay.classList.remove('active');
-    });
-
-    conditionsButton.addEventListener('click', () => {
-        conditionsMenu.classList.add('active');
-        overlay.classList.add('active');
-    });
-
-    closeConditions.addEventListener('click', () => {
-        conditionsMenu.classList.remove('active');
-        overlay.classList.remove('active');
-    });
-
-    faqButton.addEventListener('click', () => {
-        faqModal.classList.add('active');
-        overlay.classList.add('active');
-    });
-
-    closeFaq.addEventListener('click', () => {
-        faqModal.classList.remove('active');
-        overlay.classList.remove('active');
-    });
-
-    overlay.addEventListener('click', () => {
-        faqModal.classList.remove('active');
-        parrainageMenu.classList.remove('active');
-        conditionsMenu.classList.remove('active');
-        settingsMenu.classList.remove('active');
-        notificationsMenu.classList.remove('active');
-        paymentMenu.classList.remove('active');
-        withdrawMenu.classList.remove('active');
-        historyMenu.classList.remove('active');
-        rechargeMenu.classList.remove('active');
-        ordersMenu.classList.remove('active');
-        sellMenu.classList.remove('active');
-        buyMenu.classList.remove('active');
-        otherCardsSheet.classList.remove('active');
-        overlay.classList.remove('active');
-    });
-
-    copyCodeBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(codeValue.innerText).then(() => {
-            alert('Code copié !');
+    if (parrainageButton) {
+        parrainageButton.addEventListener('click', () => {
+            if (parrainageMenu) parrainageMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+            chargerDonneesParrainage();
         });
-    });
+    }
+
+    if (closeParrainage) {
+        closeParrainage.addEventListener('click', () => {
+            if (parrainageMenu) parrainageMenu.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        });
+    }
+
+    if (conditionsButton) {
+        conditionsButton.addEventListener('click', () => {
+            if (conditionsMenu) conditionsMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+
+    if (closeConditions) {
+        closeConditions.addEventListener('click', () => {
+            if (conditionsMenu) conditionsMenu.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        });
+    }
+
+    if (faqButton) {
+        faqButton.addEventListener('click', () => {
+            if (faqModal) faqModal.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+
+    if (closeFaq) {
+        closeFaq.addEventListener('click', () => {
+            if (faqModal) faqModal.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            if (faqModal) faqModal.classList.remove('active');
+            if (parrainageMenu) parrainageMenu.classList.remove('active');
+            if (conditionsMenu) conditionsMenu.classList.remove('active');
+            if (settingsMenu) settingsMenu.classList.remove('active');
+            if (notificationsMenu) notificationsMenu.classList.remove('active');
+            if (paymentMenu) paymentMenu.classList.remove('active');
+            if (withdrawMenu) withdrawMenu.classList.remove('active');
+            if (historyMenu) historyMenu.classList.remove('active');
+            if (rechargeMenu) rechargeMenu.classList.remove('active');
+            if (ordersMenu) ordersMenu.classList.remove('active');
+            if (sellMenu) sellMenu.classList.remove('active');
+            if (buyMenu) buyMenu.classList.remove('active');
+            if (otherCardsSheet) otherCardsSheet.classList.remove('active');
+            if (overlaySheet) overlaySheet.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    }
+
+    if (copyCodeBtn) {
+        copyCodeBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(codeValue ? codeValue.innerText : '').then(() => {
+                alert('Code copié !');
+            });
+        });
+    }
 
     async function chargerDonneesParrainage() {
         const user = auth.currentUser;
@@ -2824,29 +2923,29 @@
         
         if (userDoc.exists) {
             const data = userDoc.data();
-            codeValue.innerText = data.idPublic || 'SC-XXXXXXXXXXXX';
+            if (codeValue) codeValue.innerText = data.idPublic || 'SC-XXXXXXXXXXXX';
             
             const filleulsSnapshot = await db.collection('utilisateurs')
                 .where('parrain', '==', user.uid)
                 .get();
             
             const filleulsCount = filleulsSnapshot.size;
-            totalFilleuls.innerText = filleulsCount;
+            if (totalFilleuls) totalFilleuls.innerText = filleulsCount;
             
             const total = data.totalParrainage || 0;
-            totalGagne.innerText = `${total} FCFA`;
+            if (totalGagne) totalGagne.innerText = `${total} FCFA`;
             
             const reste = Math.max(0, 10000 - total);
-            gainRestant.innerText = `${reste} FCFA`;
+            if (gainRestant) gainRestant.innerText = `${reste} FCFA`;
             
             if (filleulsCount === 0) {
-                emptyFilleuls.style.display = 'block';
-                const anciensItems = filleulsList.querySelectorAll('.filleul-item');
+                if (emptyFilleuls) emptyFilleuls.style.display = 'block';
+                const anciensItems = filleulsList ? filleulsList.querySelectorAll('.filleul-item') : [];
                 anciensItems.forEach(item => item.remove());
             } else {
-                emptyFilleuls.style.display = 'none';
+                if (emptyFilleuls) emptyFilleuls.style.display = 'none';
                 
-                const anciensItems = filleulsList.querySelectorAll('.filleul-item');
+                const anciensItems = filleulsList ? filleulsList.querySelectorAll('.filleul-item') : [];
                 anciensItems.forEach(item => item.remove());
                 
                 filleulsSnapshot.forEach(doc => {
@@ -2861,7 +2960,7 @@
                         </div>
                         <div class="filleul-stats">+250 F/vente</div>
                     `;
-                    filleulsList.appendChild(item);
+                    if (filleulsList) filleulsList.appendChild(item);
                 });
                 lucide.createIcons();
             }
@@ -2869,82 +2968,108 @@
     }
 
     const closeAllMenus = () => {
-        settingsMenu.classList.remove('active'); notificationsMenu.classList.remove('active'); paymentMenu.classList.remove('active');
-        withdrawMenu.classList.remove('active'); historyMenu.classList.remove('active'); rechargeMenu.classList.remove('active');
-        ordersMenu.classList.remove('active'); sellMenu.classList.remove('active'); buyMenu.classList.remove('active');
-        parrainageMenu.classList.remove('active'); conditionsMenu.classList.remove('active'); faqModal.classList.remove('active');
-        overlay.classList.remove('active');
+        if (settingsMenu) settingsMenu.classList.remove('active');
+        if (notificationsMenu) notificationsMenu.classList.remove('active');
+        if (paymentMenu) paymentMenu.classList.remove('active');
+        if (withdrawMenu) withdrawMenu.classList.remove('active');
+        if (historyMenu) historyMenu.classList.remove('active');
+        if (rechargeMenu) rechargeMenu.classList.remove('active');
+        if (ordersMenu) ordersMenu.classList.remove('active');
+        if (sellMenu) sellMenu.classList.remove('active');
+        if (buyMenu) buyMenu.classList.remove('active');
+        if (parrainageMenu) parrainageMenu.classList.remove('active');
+        if (conditionsMenu) conditionsMenu.classList.remove('active');
+        if (faqModal) faqModal.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
     };
-    closeMenu.addEventListener('click', closeAllMenus);
-    closeNotifications.addEventListener('click', closeAllMenus);
-    closePayment.addEventListener('click', closeAllMenus);
-    closeWithdraw.addEventListener('click', closeAllMenus);
-    closeHistory.addEventListener('click', closeAllMenus);
-    closeRecharge.addEventListener('click', closeAllMenus);
-    closeOrders.addEventListener('click', closeAllMenus);
-    closeSell.addEventListener('click', closeAllMenus);
-    closeBuy.addEventListener('click', closeAllMenus);
-    closeParrainage.addEventListener('click', closeAllMenus);
-    closeConditions.addEventListener('click', closeAllMenus);
-    closeFaq.addEventListener('click', closeAllMenus);
-    overlay.addEventListener('click', closeAllMenus);
+
+    if (closeMenu) closeMenu.addEventListener('click', closeAllMenus);
+    if (closeNotifications) closeNotifications.addEventListener('click', closeAllMenus);
+    if (closePayment) closePayment.addEventListener('click', closeAllMenus);
+    if (closeWithdraw) closeWithdraw.addEventListener('click', closeAllMenus);
+    if (closeHistory) closeHistory.addEventListener('click', closeAllMenus);
+    if (closeRecharge) closeRecharge.addEventListener('click', closeAllMenus);
+    if (closeOrders) closeOrders.addEventListener('click', closeAllMenus);
+    if (closeSell) closeSell.addEventListener('click', closeAllMenus);
+    if (closeBuy) closeBuy.addEventListener('click', closeAllMenus);
+    if (closeParrainage) closeParrainage.addEventListener('click', closeAllMenus);
+    if (closeConditions) closeConditions.addEventListener('click', closeAllMenus);
+    if (closeFaq) closeFaq.addEventListener('click', closeAllMenus);
+    if (overlay) overlay.addEventListener('click', closeAllMenus);
 
     // Onglets recharge
-    rechargeTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            rechargeTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            if (tab.dataset.target === 'self') { rechargeSelf.classList.add('active'); rechargeFriend.classList.remove('active'); }
-            else { rechargeFriend.classList.add('active'); rechargeSelf.classList.remove('active'); }
+    if (rechargeTabs.length) {
+        rechargeTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                rechargeTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                if (tab.dataset.target === 'self') {
+                    if (rechargeSelf) { rechargeSelf.classList.add('active'); }
+                    if (rechargeFriend) { rechargeFriend.classList.remove('active'); }
+                } else {
+                    if (rechargeFriend) { rechargeFriend.classList.add('active'); }
+                    if (rechargeSelf) { rechargeSelf.classList.remove('active'); }
+                }
+            });
         });
-    });
+    }
 
-    friendSourceOptions.forEach(opt => {
-        opt.addEventListener('click', () => {
-            friendSourceOptions.forEach(o => o.classList.remove('active'));
-            opt.classList.add('active');
-            friendSource = opt.dataset.source;
-            if (friendSource === 'internal') {
-                friendExternalMethodsDiv.style.display = 'none';
-                selectedRechargeMethodFriend = null;
-            } else {
-                friendExternalMethodsDiv.style.display = 'block';
-            }
-            checkRechargeFriend();
+    if (friendSourceOptions.length) {
+        friendSourceOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                friendSourceOptions.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                friendSource = opt.dataset.source;
+                if (friendSource === 'internal') {
+                    if (friendExternalMethodsDiv) friendExternalMethodsDiv.style.display = 'none';
+                    selectedRechargeMethodFriend = null;
+                } else {
+                    if (friendExternalMethodsDiv) friendExternalMethodsDiv.style.display = 'block';
+                }
+                checkRechargeFriend();
+            });
         });
-    });
+    }
 
-    showAddPaymentFormBtn.addEventListener('click', () => {
-        addPaymentForm.style.display = 'block';
-        showAddPaymentFormBtn.style.display = 'none';
-    });
-    paymentTypeOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            paymentTypeOptions.forEach(opt => opt.classList.remove('selected'));
-            option.classList.add('selected');
-            selectedPaymentType = option.dataset.type;
+    if (showAddPaymentFormBtn) {
+        showAddPaymentFormBtn.addEventListener('click', () => {
+            if (addPaymentForm) addPaymentForm.style.display = 'block';
+            if (showAddPaymentFormBtn) showAddPaymentFormBtn.style.display = 'none';
         });
-    });
-    paymentTypeOptions[0].classList.add('selected');
-    savePaymentBtn.addEventListener('click', async () => {
-        const number = paymentNumberInput.value.trim();
-        if (!number) return alert('Veuillez entrer un numéro');
-        const user = auth.currentUser;
-        if (!user) return;
-        try {
-            const methodsRef = db.collection('utilisateurs').doc(user.uid).collection('moyensPaiement');
-            await methodsRef.add({ type: selectedPaymentType, numero: number, dateAjout: new Date() });
-            paymentNumberInput.value = '';
-            addPaymentForm.style.display = 'none';
-            showAddPaymentFormBtn.style.display = 'flex';
-            alert('Moyen de paiement ajouté !');
-        } catch (error) { console.error(error); alert('Erreur : ' + error.message); }
-    });
+    }
+    if (paymentTypeOptions.length) {
+        paymentTypeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                paymentTypeOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedPaymentType = option.dataset.type;
+            });
+        });
+    }
+    if (paymentTypeOptions[0]) paymentTypeOptions[0].classList.add('selected');
+
+    if (savePaymentBtn) {
+        savePaymentBtn.addEventListener('click', async () => {
+            const number = paymentNumberInput ? paymentNumberInput.value.trim() : '';
+            if (!number) return alert('Veuillez entrer un numéro');
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                const methodsRef = db.collection('utilisateurs').doc(user.uid).collection('moyensPaiement');
+                await methodsRef.add({ type: selectedPaymentType, numero: number, dateAjout: new Date() });
+                if (paymentNumberInput) paymentNumberInput.value = '';
+                if (addPaymentForm) addPaymentForm.style.display = 'none';
+                if (showAddPaymentFormBtn) showAddPaymentFormBtn.style.display = 'flex';
+                alert('Moyen de paiement ajouté !');
+            } catch (error) { console.error(error); alert('Erreur : ' + error.message); }
+        });
+    }
 
     function updateWithdrawMethodsList(methods) {
+        if (!withdrawMethodsList) return;
         if (methods.length === 0) {
             withdrawMethodsList.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen enregistré. Ajoutez-en dans "Compte".</p>';
-            withdrawBtn.disabled = true;
+            if (withdrawBtn) withdrawBtn.disabled = true;
             return;
         }
         let html = '';
@@ -2966,146 +3091,182 @@
             });
         });
     }
+
     function checkWithdrawButton() {
-        const amount = parseFloat(withdrawAmount.value);
+        const amount = withdrawAmount ? parseFloat(withdrawAmount.value) : NaN;
         const balance = parseFloat(realBalance) || 0;
-        withdrawBtn.disabled = !(selectedWithdrawMethod && amount >= 100 && amount <= balance);
+        if (withdrawBtn) {
+            withdrawBtn.disabled = !(selectedWithdrawMethod && amount >= 100 && amount <= balance);
+        }
     }
-    withdrawAmount.addEventListener('input', checkWithdrawButton);
-    withdrawBtn.addEventListener('click', async () => {
-        if (!selectedWithdrawMethod) return alert('Sélectionnez un moyen');
-        const amount = parseFloat(withdrawAmount.value);
-        if (isNaN(amount) || amount < 100) return alert('Montant minimum 100 FCFA');
-        if (amount > parseFloat(realBalance)) return alert('Solde insuffisant');
-        alert(`xxxxx Demande de retrait de ${amount} FCFA vers ${selectedWithdrawMethod.type} (${selectedWithdrawMethod.numero}) - Intégration CinetPay à faire xxxxx`);
-    });
+
+    if (withdrawAmount) {
+        withdrawAmount.addEventListener('input', checkWithdrawButton);
+    }
+
+    if (withdrawBtn) {
+        withdrawBtn.addEventListener('click', async () => {
+            if (!selectedWithdrawMethod) return alert('Sélectionnez un moyen');
+            const amount = parseFloat(withdrawAmount.value);
+            if (isNaN(amount) || amount < 100) return alert('Montant minimum 100 FCFA');
+            if (amount > parseFloat(realBalance)) return alert('Solde insuffisant');
+            alert(`xxxxx Demande de retrait de ${amount} FCFA vers ${selectedWithdrawMethod.type} (${selectedWithdrawMethod.numero}) - Intégration CinetPay à faire xxxxx`);
+        });
+    }
 
     function updateRechargeMethodsList(methods) {
-        if (methods.length === 0) {
-            rechargeMethodsSelf.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen. Ajoutez-en dans "Compte".</p>';
-            rechargeMethodsFriend.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen. Ajoutez-en dans "Compte".</p>';
-            return;
-        }
-        let htmlSelf = '', htmlFriend = '';
-        methods.forEach((method, index) => {
-            const icon = method.type === 'mobile_money' ? 'smartphone' : (method.type === 'wave' ? 'zap' : (method.type === 'paypal' ? 'paypal' : 'credit-card'));
-            const typeName = method.type === 'mobile_money' ? 'Mobile Money' : (method.type === 'wave' ? 'Wave' : (method.type === 'paypal' ? 'PayPal' : 'Carte'));
-            const numero = method.numero || '';
-            const maskedNum = numero.length > 4 ? '••••' + numero.slice(-4) : '••••';
-            htmlSelf += `<div class="recharge-method-item" data-index="${index}" data-type="self"><div class="recharge-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
-            htmlFriend += `<div class="recharge-method-item" data-index="${index}" data-type="friend"><div class="recharge-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
-        });
-        rechargeMethodsSelf.innerHTML = htmlSelf;
-        rechargeMethodsFriend.innerHTML = htmlFriend;
-        lucide.createIcons();
+        if (rechargeMethodsSelf && rechargeMethodsFriend) {
+            if (methods.length === 0) {
+                rechargeMethodsSelf.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen. Ajoutez-en dans "Compte".</p>';
+                rechargeMethodsFriend.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen. Ajoutez-en dans "Compte".</p>';
+                return;
+            }
+            let htmlSelf = '', htmlFriend = '';
+            methods.forEach((method, index) => {
+                const icon = method.type === 'mobile_money' ? 'smartphone' : (method.type === 'wave' ? 'zap' : (method.type === 'paypal' ? 'paypal' : 'credit-card'));
+                const typeName = method.type === 'mobile_money' ? 'Mobile Money' : (method.type === 'wave' ? 'Wave' : (method.type === 'paypal' ? 'PayPal' : 'Carte'));
+                const numero = method.numero || '';
+                const maskedNum = numero.length > 4 ? '••••' + numero.slice(-4) : '••••';
+                htmlSelf += `<div class="recharge-method-item" data-index="${index}" data-type="self"><div class="recharge-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
+                htmlFriend += `<div class="recharge-method-item" data-index="${index}" data-type="friend"><div class="recharge-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
+            });
+            rechargeMethodsSelf.innerHTML = htmlSelf;
+            rechargeMethodsFriend.innerHTML = htmlFriend;
+            lucide.createIcons();
 
-        document.querySelectorAll('#rechargeSelf .recharge-method-item').forEach(item => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('#rechargeSelf .recharge-method-item').forEach(el => el.classList.remove('selected'));
-                item.classList.add('selected');
-                selectedRechargeMethodSelf = methods[item.dataset.index];
-                checkRechargeSelf();
+            document.querySelectorAll('#rechargeSelf .recharge-method-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('#rechargeSelf .recharge-method-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedRechargeMethodSelf = methods[item.dataset.index];
+                    checkRechargeSelf();
+                });
             });
-        });
-        document.querySelectorAll('#rechargeFriend .recharge-method-item').forEach(item => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('#rechargeFriend .recharge-method-item').forEach(el => el.classList.remove('selected'));
-                item.classList.add('selected');
-                selectedRechargeMethodFriend = methods[item.dataset.index];
-                checkRechargeFriend();
+            document.querySelectorAll('#rechargeFriend .recharge-method-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('#rechargeFriend .recharge-method-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedRechargeMethodFriend = methods[item.dataset.index];
+                    checkRechargeFriend();
+                });
             });
-        });
+        }
     }
 
     function updateRechargeSelfCalc() {
-        const amount = parseFloat(rechargeAmountSelf.value);
+        const amount = rechargeAmountSelf ? parseFloat(rechargeAmountSelf.value) : NaN;
         if (isNaN(amount) || amount < 100) {
-            receiveSelfSpan.innerText = '0';
+            if (receiveSelfSpan) receiveSelfSpan.innerText = '0';
             return;
         }
         const receive = amount * 0.98;
-        receiveSelfSpan.innerText = receive.toFixed(0);
+        if (receiveSelfSpan) receiveSelfSpan.innerText = receive.toFixed(0);
     }
-    rechargeAmountSelf.addEventListener('input', () => {
-        updateRechargeSelfCalc();
-        checkRechargeSelf();
-    });
+
+    if (rechargeAmountSelf) {
+        rechargeAmountSelf.addEventListener('input', () => {
+            updateRechargeSelfCalc();
+            checkRechargeSelf();
+        });
+    }
 
     function checkRechargeSelf() {
-        const amount = parseFloat(rechargeAmountSelf.value);
-        const checked = rechargeConfirmSelf.checked;
+        const amount = rechargeAmountSelf ? parseFloat(rechargeAmountSelf.value) : NaN;
+        const checked = rechargeConfirmSelf ? rechargeConfirmSelf.checked : false;
         const methodSelected = selectedRechargeMethodSelf;
-        rechargeSelfBtn.disabled = !(methodSelected && amount >= 100 && checked);
+        if (rechargeSelfBtn) {
+            rechargeSelfBtn.disabled = !(methodSelected && amount >= 100 && checked);
+        }
     }
-    rechargeConfirmSelf.addEventListener('change', checkRechargeSelf);
+
+    if (rechargeConfirmSelf) {
+        rechargeConfirmSelf.addEventListener('change', checkRechargeSelf);
+    }
 
     function updateRechargeFriendCalc() {
-        const amount = parseFloat(rechargeAmountFriend.value);
+        const amount = rechargeAmountFriend ? parseFloat(rechargeAmountFriend.value) : NaN;
         if (isNaN(amount) || amount < 100) {
-            receiveFriendSpan.innerText = '';
+            if (receiveFriendSpan) receiveFriendSpan.innerText = '';
             return;
         }
         if (friendSource === 'internal') {
-            receiveFriendSpan.innerText = `L'ami recevra : ${amount} FCFA (gratuit)`;
+            if (receiveFriendSpan) receiveFriendSpan.innerText = `L'ami recevra : ${amount} FCFA (gratuit)`;
         } else {
             const receive = amount * 0.9;
-            receiveFriendSpan.innerText = `L'ami recevra : ${receive.toFixed(0)} FCFA (frais de 10% déduits)`;
+            if (receiveFriendSpan) receiveFriendSpan.innerText = `L'ami recevra : ${receive.toFixed(0)} FCFA (frais de 10% déduits)`;
         }
     }
-    rechargeAmountFriend.addEventListener('input', () => {
-        updateRechargeFriendCalc();
-        checkRechargeFriend();
-    });
-    friendId.addEventListener('input', checkRechargeFriend);
-    friendReason.addEventListener('input', checkRechargeFriend);
-    rechargeConfirmFriend.addEventListener('change', checkRechargeFriend);
+
+    if (rechargeAmountFriend) {
+        rechargeAmountFriend.addEventListener('input', () => {
+            updateRechargeFriendCalc();
+            checkRechargeFriend();
+        });
+    }
+    if (friendId) {
+        friendId.addEventListener('input', checkRechargeFriend);
+    }
+    if (friendReason) {
+        friendReason.addEventListener('input', checkRechargeFriend);
+    }
+    if (rechargeConfirmFriend) {
+        rechargeConfirmFriend.addEventListener('change', checkRechargeFriend);
+    }
 
     function checkRechargeFriend() {
-        const amount = parseFloat(rechargeAmountFriend.value);
-        const checked = rechargeConfirmFriend.checked;
-        const id = friendId.value.trim();
-        const reason = friendReason.value.trim();
+        const amount = rechargeAmountFriend ? parseFloat(rechargeAmountFriend.value) : NaN;
+        const checked = rechargeConfirmFriend ? rechargeConfirmFriend.checked : false;
+        const id = friendId ? friendId.value.trim() : '';
+        const reason = friendReason ? friendReason.value.trim() : '';
         if (friendSource === 'internal') {
             const balance = parseFloat(realBalance) || 0;
-            rechargeFriendBtn.disabled = !(amount >= 100 && amount <= balance && checked && id && reason);
+            if (rechargeFriendBtn) {
+                rechargeFriendBtn.disabled = !(amount >= 100 && amount <= balance && checked && id && reason);
+            }
         } else {
             const methodSelected = selectedRechargeMethodFriend;
-            rechargeFriendBtn.disabled = !(methodSelected && amount >= 100 && checked && id && reason);
+            if (rechargeFriendBtn) {
+                rechargeFriendBtn.disabled = !(methodSelected && amount >= 100 && checked && id && reason);
+            }
         }
     }
 
-    rechargeSelfBtn.addEventListener('click', async () => {
-        const amount = parseFloat(rechargeAmountSelf.value);
-        const method = selectedRechargeMethodSelf;
-        if (!method) return alert('Sélectionnez un moyen de paiement');
-        await initierPaiementCinetPay(
-            amount,
-            'XOF',
-            `Recharge compte Sell Card`,
-            auth.currentUser.uid,
-            'recharge_self'
-        );
-    });
-
-    rechargeFriendBtn.addEventListener('click', async () => {
-        const amount = parseFloat(rechargeAmountFriend.value);
-        const id = friendId.value.trim();
-        const reason = friendReason.value.trim();
-        if (friendSource === 'internal') {
-            await transfertInterne(amount, auth.currentUser.uid, id, reason);
-        } else {
-            const method = selectedRechargeMethodFriend;
+    if (rechargeSelfBtn) {
+        rechargeSelfBtn.addEventListener('click', async () => {
+            const amount = parseFloat(rechargeAmountSelf.value);
+            const method = selectedRechargeMethodSelf;
             if (!method) return alert('Sélectionnez un moyen de paiement');
             await initierPaiementCinetPay(
                 amount,
                 'XOF',
-                `Recharge ami ${id} - ${reason}`,
+                `Recharge compte Sell Card`,
                 auth.currentUser.uid,
-                'recharge_friend',
-                id
+                'recharge_self'
             );
-        }
-    });
+        });
+    }
+
+    if (rechargeFriendBtn) {
+        rechargeFriendBtn.addEventListener('click', async () => {
+            const amount = parseFloat(rechargeAmountFriend.value);
+            const id = friendId ? friendId.value.trim() : '';
+            const reason = friendReason ? friendReason.value.trim() : '';
+            if (friendSource === 'internal') {
+                await transfertInterne(amount, auth.currentUser.uid, id, reason);
+            } else {
+                const method = selectedRechargeMethodFriend;
+                if (!method) return alert('Sélectionnez un moyen de paiement');
+                await initierPaiementCinetPay(
+                    amount,
+                    'XOF',
+                    `Recharge ami ${id} - ${reason}`,
+                    auth.currentUser.uid,
+                    'recharge_friend',
+                    id
+                );
+            }
+        });
+    }
 
     // Gestion des cartes populaires et autres
     const cartesRef = db.collection("cartes");
@@ -3126,6 +3287,7 @@
     });
 
     function updatePopularGrid(cartes) {
+        if (!popularGrid) return;
         let html = '';
         cartes.forEach(carte => {
             const tauxExemple = carte.tauxParPays?.['PRY'] || carte.taux || '0';
@@ -3141,27 +3303,31 @@
                 ouvrirVentePourCarte(id);
             });
         });
-        document.getElementById('moreCardsBtn').addEventListener('click', () => {
-            otherCardsSheet.classList.add('active');
-            overlaySheet.classList.add('active');
-        });
+        const moreBtn = document.getElementById('moreCardsBtn');
+        if (moreBtn) {
+            moreBtn.addEventListener('click', () => {
+                if (otherCardsSheet) otherCardsSheet.classList.add('active');
+                if (overlaySheet) overlaySheet.classList.add('active');
+            });
+        }
     }
 
     function ouvrirVentePourCarte(id) {
         const carte = cartesMap.get(id);
         if (carte) {
             selectedCard = carte;
-            selectedCardName.innerText = `Vendre ${selectedCard.nom}`;
-            sellFormDash.style.display = 'block';
+            if (selectedCardName) selectedCardName.innerText = `Vendre ${selectedCard.nom}`;
+            if (sellFormDash) sellFormDash.style.display = 'block';
             updateCalc();
-            sellMenu.classList.add('active');
-            overlay.classList.add('active');
+            if (sellMenu) sellMenu.classList.add('active');
+            if (overlay) overlay.classList.add('active');
         } else {
             alert('Carte introuvable');
         }
     }
 
     function updateSellCatalog(cartes) {
+        if (!sellCatalog) return;
         if (cartes.length === 0) {
             sellCatalog.innerHTML = '<p style="text-align:center;">Aucune carte disponible</p>';
             return;
@@ -3181,8 +3347,8 @@
                     document.querySelectorAll('.sell-card-item').forEach(el => el.classList.remove('selected'));
                     item.classList.add('selected');
                     selectedCard = carte;
-                    selectedCardName.innerText = `Vendre ${selectedCard.nom}`;
-                    sellFormDash.style.display = 'block';
+                    if (selectedCardName) selectedCardName.innerText = `Vendre ${selectedCard.nom}`;
+                    if (sellFormDash) sellFormDash.style.display = 'block';
                     updateCalc();
                 }
             });
@@ -3190,6 +3356,7 @@
     }
 
     function updateOtherCardsList(cartes) {
+        if (!otherCardsList) return;
         if (cartes.length === 0) { otherCardsList.innerHTML = '<p style="text-align:center;">Aucune autre carte disponible</p>'; return; }
         let html = '';
         cartes.forEach(carte => {
@@ -3205,41 +3372,49 @@
     }
 
     // Recherche
-    searchButton.addEventListener('click', () => {
-        searchInput.classList.add('visible');
-        clearSearch.classList.add('visible');
-        searchButton.style.display = 'none';
-        searchInput.focus();
-    });
-
-    clearSearch.addEventListener('click', () => {
-        searchInput.value = '';
-        searchInput.classList.remove('visible');
-        clearSearch.classList.remove('visible');
-        searchButton.style.display = 'flex';
-        cartesRef.onSnapshot(snapshot => {
-            const toutes = [];
-            snapshot.forEach(doc => toutes.push({ id: doc.id, ...doc.data() }));
-            updateSellCatalog(toutes.filter(c => c.actif));
-            updatePopularGrid(toutes.filter(c => c.populaire).slice(0, 5));
+    if (searchButton) {
+        searchButton.addEventListener('click', () => {
+            if (searchInput) searchInput.classList.add('visible');
+            if (clearSearch) clearSearch.classList.add('visible');
+            if (searchButton) searchButton.style.display = 'none';
+            if (searchInput) searchInput.focus();
         });
-    });
+    }
 
-    searchInput.addEventListener('input', (e) => {
-        const terme = e.target.value.toLowerCase().trim();
-        if (terme === '') {
+    if (clearSearch) {
+        clearSearch.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.classList.remove('visible');
+            }
+            if (clearSearch) clearSearch.classList.remove('visible');
+            if (searchButton) searchButton.style.display = 'flex';
             cartesRef.onSnapshot(snapshot => {
                 const toutes = [];
                 snapshot.forEach(doc => toutes.push({ id: doc.id, ...doc.data() }));
                 updateSellCatalog(toutes.filter(c => c.actif));
                 updatePopularGrid(toutes.filter(c => c.populaire).slice(0, 5));
             });
-        } else {
-            const filtrees = toutesLesCartes.filter(c => c.nom.toLowerCase().includes(terme));
-            updateSellCatalog(filtrees);
-            updatePopularGrid(filtrees.filter(c => c.populaire).slice(0, 5));
-        }
-    });
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const terme = e.target.value.toLowerCase().trim();
+            if (terme === '') {
+                cartesRef.onSnapshot(snapshot => {
+                    const toutes = [];
+                    snapshot.forEach(doc => toutes.push({ id: doc.id, ...doc.data() }));
+                    updateSellCatalog(toutes.filter(c => c.actif));
+                    updatePopularGrid(toutes.filter(c => c.populaire).slice(0, 5));
+                });
+            } else {
+                const filtrees = toutesLesCartes.filter(c => c.nom.toLowerCase().includes(terme));
+                updateSellCatalog(filtrees);
+                updatePopularGrid(filtrees.filter(c => c.populaire).slice(0, 5));
+            }
+        });
+    }
 
     const availableCardsQuery = cartesRef.where("actif", "==", true);
     availableCardsQuery.onSnapshot(snapshot => {
@@ -3252,137 +3427,148 @@
     });
 
     function updateCalc() {
-        const amount = parseFloat(sellAmount.value);
-        const pays = paysProvenance.value;
+        const amount = sellAmount ? parseFloat(sellAmount.value) : NaN;
+        const pays = paysProvenance ? paysProvenance.value : '';
         if (!selectedCard || isNaN(amount) || amount <= 0 || !pays) {
-            sellReceive.innerText = '0';
-            sellSubmit.disabled = true;
+            if (sellReceive) sellReceive.innerText = '0';
+            if (sellSubmit) sellSubmit.disabled = true;
             return;
         }
         const taux = selectedCard.tauxParPays?.[pays];
         if (!taux) {
-            sellReceive.innerText = 'Taux non défini';
-            sellSubmit.disabled = true;
+            if (sellReceive) sellReceive.innerText = 'Taux non défini';
+            if (sellSubmit) sellSubmit.disabled = true;
             return;
         }
         const montantEffectif = amount * 0.8;
         let montantFCFA = montantEffectif * taux * (1 - commission);
-        sellReceive.innerText = montantFCFA.toFixed(0);
+        if (sellReceive) sellReceive.innerText = montantFCFA.toFixed(0);
         
-        const codeOk = sellCode.value.trim() !== '';
-        sellSubmit.disabled = !(codeOk && pays);
+        const codeOk = sellCode ? sellCode.value.trim() !== '' : false;
+        if (sellSubmit) sellSubmit.disabled = !(codeOk && pays);
     }
-    sellAmount.addEventListener('input', updateCalc);
-    sellCode.addEventListener('input', updateCalc);
-    paysProvenance.addEventListener('change', updateCalc);
 
-    sellSubmit.addEventListener('click', async () => {
-        if (!selectedCard) return;
-        const user = auth.currentUser;
-        if (!user) return;
-        const amount = parseFloat(sellAmount.value);
-        const code = sellCode.value.trim();
-        const pays = paysProvenance.value;
-        const photoFile = sellPhoto.files[0];
-        
-        const taux = selectedCard.tauxParPays?.[pays];
-        if (!taux) {
-            alert('Taux non défini pour ce pays');
-            return;
-        }
+    if (sellAmount) {
+        sellAmount.addEventListener('input', updateCalc);
+    }
+    if (sellCode) {
+        sellCode.addEventListener('input', updateCalc);
+    }
+    if (paysProvenance) {
+        paysProvenance.addEventListener('change', updateCalc);
+    }
 
-        const montantEffectif = amount * 0.8;
-        const montantFCFA = montantEffectif * taux * (1 - commission);
-        
-        const transactionData = {
-            userId: user.uid,
-            carteId: selectedCard.id,
-            carteNom: selectedCard.nom,
-            montantOriginal: amount,
-            montantEffectif: montantEffectif,
-            deviseOriginal: selectedCard.devise,
-            montantFCFA: montantFCFA,
-            code: code,
-            paysProvenance: pays,
-            tauxApplique: taux,
-            statut: "en_cours",
-            date: new Date(),
-            progression: 0
-        };
-        if (photoFile) {
-            const storageRef = storage.ref(`ventes/${user.uid}/${Date.now()}_${photoFile.name}`);
-            await storageRef.put(photoFile);
-            transactionData.photoURL = await storageRef.getDownloadURL();
-        }
-        const docRef = await db.collection("transactions").add(transactionData);
-        sellProgress.style.display = 'block';
-        sellSubmit.disabled = true;
+    if (sellSubmit) {
+        sellSubmit.addEventListener('click', async () => {
+            if (!selectedCard) return;
+            const user = auth.currentUser;
+            if (!user) return;
+            const amount = parseFloat(sellAmount.value);
+            const code = sellCode ? sellCode.value.trim() : '';
+            const pays = paysProvenance ? paysProvenance.value : '';
+            const photoFile = sellPhoto ? sellPhoto.files[0] : null;
+            
+            const taux = selectedCard.tauxParPays?.[pays];
+            if (!taux) {
+                alert('Taux non défini pour ce pays');
+                return;
+            }
 
-        db.collection("transactions").doc(docRef.id).onSnapshot(async (doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                if (data.statut === "approuvé") {
-                    sellProgressFill.style.width = "100%";
-                    alert("Vente approuvée ! Votre solde a été mis à jour.");
+            const montantEffectif = amount * 0.8;
+            const montantFCFA = montantEffectif * taux * (1 - commission);
+            
+            const transactionData = {
+                userId: user.uid,
+                carteId: selectedCard.id,
+                carteNom: selectedCard.nom,
+                montantOriginal: amount,
+                montantEffectif: montantEffectif,
+                deviseOriginal: selectedCard.devise,
+                montantFCFA: montantFCFA,
+                code: code,
+                paysProvenance: pays,
+                tauxApplique: taux,
+                statut: "en_cours",
+                date: new Date(),
+                progression: 0
+            };
+            if (photoFile) {
+                const storageRef = storage.ref(`ventes/${user.uid}/${Date.now()}_${photoFile.name}`);
+                await storageRef.put(photoFile);
+                transactionData.photoURL = await storageRef.getDownloadURL();
+            }
+            const docRef = await db.collection("transactions").add(transactionData);
+            if (sellProgress) sellProgress.style.display = 'block';
+            if (sellSubmit) sellSubmit.disabled = true;
 
-                    const userRef = db.collection('utilisateurs').doc(user.uid);
-                    await userRef.update({
-                        solde: firebase.firestore.FieldValue.increment(parseFloat(data.montantFCFA))
-                    });
+            db.collection("transactions").doc(docRef.id).onSnapshot(async (doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.statut === "approuvé") {
+                        if (sellProgressFill) sellProgressFill.style.width = "100%";
+                        alert("Vente approuvée ! Votre solde a été mis à jour.");
 
-                    const userDoc = await userRef.get();
-                    if (userDoc.exists && userDoc.data().parrain) {
-                        const parrainId = userDoc.data().parrain;
-                        const parrainRef = db.collection('utilisateurs').doc(parrainId);
-                        const parrainDoc = await parrainRef.get();
-                        if (parrainDoc.exists) {
-                            const totalParrainage = parrainDoc.data().totalParrainage || 0;
-                            if (totalParrainage < 10000) {
-                                const reste = 10000 - totalParrainage;
-                                const aAjouter = Math.min(250, reste);
-                                await parrainRef.update({
-                                    solde: firebase.firestore.FieldValue.increment(aAjouter),
-                                    totalParrainage: firebase.firestore.FieldValue.increment(aAjouter)
-                                });
-                                await db.collection('notifications').add({
-                                    userId: parrainId,
-                                    titre: 'Gain de parrainage',
-                                    message: `Vous avez gagné ${aAjouter} FCFA grâce à une vente de votre filleul.`,
-                                    type: 'transaction',
-                                    statut: 'success',
-                                    lu: false,
-                                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                                    icone: 'gift'
-                                });
+                        const userRef = db.collection('utilisateurs').doc(user.uid);
+                        await userRef.update({
+                            solde: firebase.firestore.FieldValue.increment(parseFloat(data.montantFCFA))
+                        });
+
+                        const userDoc = await userRef.get();
+                        if (userDoc.exists && userDoc.data().parrain) {
+                            const parrainId = userDoc.data().parrain;
+                            const parrainRef = db.collection('utilisateurs').doc(parrainId);
+                            const parrainDoc = await parrainRef.get();
+                            if (parrainDoc.exists) {
+                                const totalParrainage = parrainDoc.data().totalParrainage || 0;
+                                if (totalParrainage < 10000) {
+                                    const reste = 10000 - totalParrainage;
+                                    const aAjouter = Math.min(250, reste);
+                                    await parrainRef.update({
+                                        solde: firebase.firestore.FieldValue.increment(aAjouter),
+                                        totalParrainage: firebase.firestore.FieldValue.increment(aAjouter)
+                                    });
+                                    await db.collection('notifications').add({
+                                        userId: parrainId,
+                                        titre: 'Gain de parrainage',
+                                        message: `Vous avez gagné ${aAjouter} FCFA grâce à une vente de votre filleul.`,
+                                        type: 'transaction',
+                                        statut: 'success',
+                                        lu: false,
+                                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                                        icone: 'gift'
+                                    });
+                                }
                             }
                         }
-                    }
 
-                    sellFormDash.style.display = 'none';
-                    document.querySelectorAll('.sell-card-item.selected').forEach(el => el.classList.remove('selected'));
-                    selectedCard = null;
-                    sellProgress.style.display = 'none';
-                } else if (data.statut === "refusé") {
-                    alert("Vente refusée.");
-                    sellProgress.style.display = 'none';
-                } else {
-                    sellProgressFill.style.width = "50%";
+                        if (sellFormDash) sellFormDash.style.display = 'none';
+                        document.querySelectorAll('.sell-card-item.selected').forEach(el => el.classList.remove('selected'));
+                        selectedCard = null;
+                        if (sellProgress) sellProgress.style.display = 'none';
+                    } else if (data.statut === "refusé") {
+                        alert("Vente refusée.");
+                        if (sellProgress) sellProgress.style.display = 'none';
+                    } else {
+                        if (sellProgressFill) sellProgressFill.style.width = "50%";
+                    }
                 }
-            }
+            });
         });
-    });
+    }
 
     const balanceSpan = document.getElementById('balance-value');
     const idBadge = document.getElementById('user-id-public');
     const toggleBtn = document.getElementById('toggle-visibility');
     let isHidden = false;
-    toggleBtn.addEventListener('click', () => {
-        isHidden = !isHidden;
-        balanceSpan.innerText = isHidden ? "****" : `${realBalance} ${currency}`;
-        idBadge.innerText = isHidden ? "ID: ********" : `ID: ${realID}`;
-        toggleBtn.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
-        lucide.createIcons();
-    });
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            isHidden = !isHidden;
+            if (balanceSpan) balanceSpan.innerText = isHidden ? "****" : `${realBalance} ${currency}`;
+            if (idBadge) idBadge.innerText = isHidden ? "ID: ********" : `ID: ${realID}`;
+            toggleBtn.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        });
+    }
 
     // ========== FONCTIONS RELOADLY ==========
     async function getReloadlyToken() {
@@ -3401,6 +3587,7 @@
     }
 
     async function chargerCatalogueReloadly() {
+        if (!buyCatalog) return;
         buyCatalog.innerHTML = '<p class="loading">Chargement du catalogue Reloadly...</p>';
         try {
             const token = await getReloadlyToken();
@@ -3423,11 +3610,12 @@
     }
 
     function afficherCatalogue(produits) {
+        if (!buyCatalog) return;
         let html = '';
         produits.forEach(prod => {
             const prix = prod.denominations?.[0] || 'Prix non disponible';
             html += `
-                <div class="buy-product-item" data-id="${prod.productId}">
+                <div class="buy-product-item" data-id="${prod.productId}" data-prod='${JSON.stringify(prod).replace(/'/g, "&apos;")}'>
                     <div class="buy-product-icon"><img src="${prod.logoUrls?.[0] || ''}" style="width:30px;height:30px;"></div>
                     <div class="buy-product-info">
                         <div class="buy-product-name">${prod.productName}</div>
@@ -3435,7 +3623,7 @@
                         <div class="buy-product-price">${prix} ${prod.currencyCode}</div>
                     </div>
                     <div class="buy-product-actions">
-                        <button class="add-to-cart-btn" data-prod='${JSON.stringify(prod)}'>Ajouter</button>
+                        <button class="add-to-cart-btn">Ajouter</button>
                     </div>
                 </div>
             `;
@@ -3443,146 +3631,179 @@
         buyCatalog.innerHTML = html;
         lucide.createIcons();
 
+        // Sélection d'un produit pour "Demander un cadeau"
+        document.querySelectorAll('.buy-product-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Éviter de sélectionner si on clique sur le bouton ajouter
+                if (e.target.classList.contains('add-to-cart-btn')) return;
+                // Retirer la sélection précédente
+                document.querySelectorAll('.buy-product-item').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+                const prodData = item.dataset.prod;
+                try {
+                    selectedProduct = JSON.parse(prodData.replace(/&apos;/g, "'"));
+                } catch (error) {
+                    console.error("Erreur parsing produit", error);
+                }
+            });
+        });
+
+        // Gestion des clics sur le bouton "Ajouter au panier"
         document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const prod = JSON.parse(btn.dataset.prod);
-                ajouterAuPanier(prod);
+                const prodData = btn.closest('.buy-product-item').dataset.prod;
+                try {
+                    const prod = JSON.parse(prodData.replace(/&apos;/g, "'"));
+                    ajouterAuPanier(prod);
+                } catch (error) {
+                    console.error("Erreur parsing produit", error);
+                }
             });
         });
     }
 
     // Recherche dans le catalogue
-    buySearch.addEventListener('input', (e) => {
-        const terme = e.target.value.toLowerCase();
-        if (terme === '') {
-            afficherCatalogue(tousLesProduits);
-        } else {
-            const filtres = tousLesProduits.filter(p => 
-                p.productName.toLowerCase().includes(terme)
-            );
-            afficherCatalogue(filtres);
-        }
-    });
+    if (buySearch) {
+        buySearch.addEventListener('input', (e) => {
+            const terme = e.target.value.toLowerCase();
+            if (terme === '') {
+                afficherCatalogue(tousLesProduits);
+            } else {
+                const filtres = tousLesProduits.filter(p => 
+                    p.productName.toLowerCase().includes(terme)
+                );
+                afficherCatalogue(filtres);
+            }
+        });
+    }
 
     // Achat pour moi-même (désormais via le panier)
-    confirmBuyForMe.addEventListener('click', async () => {
-        if (panier.length === 0) return alert('Votre panier est vide');
-        const user = auth.currentUser;
-        if (!user) return;
+    if (confirmBuyForMe) {
+        confirmBuyForMe.addEventListener('click', async () => {
+            if (panier.length === 0) return alert('Votre panier est vide');
+            const user = auth.currentUser;
+            if (!user) return;
 
-        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
-        const metadata = {
-            type: 'panier_self',
-            articles: panier.map(p => ({
-                productId: p.productId,
-                productName: p.nom,
-                unitPrice: p.prix,
-                currency: p.devise,
-                quantity: p.quantite
-            }))
-        };
+            const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+            const metadata = {
+                type: 'panier_self',
+                articles: panier.map(p => ({
+                    productId: p.productId,
+                    productName: p.nom,
+                    unitPrice: p.prix,
+                    currency: p.devise,
+                    quantity: p.quantite
+                }))
+            };
 
-        await initierPaiementCinetPay(
-            total,
-            'XOF',
-            `Achat groupé (${panier.length} articles)`,
-            user.uid,
-            'achat_reloadly',
-            metadata
-        );
+            await initierPaiementCinetPay(
+                total,
+                'XOF',
+                `Achat groupé (${panier.length} articles)`,
+                user.uid,
+                'achat_reloadly',
+                metadata
+            );
 
-        panier = [];
-        mettreAJourPanier();
-        cartPanel.style.display = 'none';
-        buyDetail.style.display = 'none';
-    });
+            panier = [];
+            mettreAJourPanier();
+            if (cartPanel) cartPanel.style.display = 'none';
+            if (buyDetail) buyDetail.style.display = 'none';
+        });
+    }
 
     // Offrir à un proche
-    confirmGift.addEventListener('click', async () => {
-        if (panier.length === 0) return alert('Votre panier est vide');
-        const user = auth.currentUser;
-        if (!user) return;
+    if (confirmGift) {
+        confirmGift.addEventListener('click', async () => {
+            if (panier.length === 0) return alert('Votre panier est vide');
+            const user = auth.currentUser;
+            if (!user) return;
 
-        const destinataire = recipientId.value.trim();
-        if (!destinataire) {
-            alert('Veuillez saisir l\'ID du destinataire');
-            return;
-        }
-        const motif = giftReason.value.trim();
-        if (!motif) {
-            alert('Veuillez saisir un motif pour le cadeau');
-            return;
-        }
+            const destinataire = recipientId ? recipientId.value.trim() : '';
+            if (!destinataire) {
+                alert('Veuillez saisir l\'ID du destinataire');
+                return;
+            }
+            const motif = giftReason ? giftReason.value.trim() : '';
+            if (!motif) {
+                alert('Veuillez saisir un motif pour le cadeau');
+                return;
+            }
 
-        const destSnapshot = await db.collection('utilisateurs').where('idPublic', '==', destinataire).get();
-        if (destSnapshot.empty) {
-            alert('ID destinataire invalide ou inexistant');
-            return;
-        }
-        const destDoc = destSnapshot.docs[0];
+            const destSnapshot = await db.collection('utilisateurs').where('idPublic', '==', destinataire).get();
+            if (destSnapshot.empty) {
+                alert('ID destinataire invalide ou inexistant');
+                return;
+            }
+            const destDoc = destSnapshot.docs[0];
 
-        const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
-        const metadata = {
-            type: 'panier_gift',
-            recipientId: destinataire,
-            recipientUid: destDoc.id,
-            reason: motif,
-            articles: panier.map(p => ({
-                productId: p.productId,
-                productName: p.nom,
-                unitPrice: p.prix,
-                currency: p.devise,
-                quantity: p.quantite
-            }))
-        };
+            const total = panier.reduce((sum, p) => sum + (p.prix * p.quantite * 600), 0);
+            const metadata = {
+                type: 'panier_gift',
+                recipientId: destinataire,
+                recipientUid: destDoc.id,
+                reason: motif,
+                articles: panier.map(p => ({
+                    productId: p.productId,
+                    productName: p.nom,
+                    unitPrice: p.prix,
+                    currency: p.devise,
+                    quantity: p.quantite
+                }))
+            };
 
-        await initierPaiementCinetPay(
-            total,
-            'XOF',
-            `Cadeau pour ${destinataire}`,
-            user.uid,
-            'achat_reloadly',
-            metadata
-        );
+            await initierPaiementCinetPay(
+                total,
+                'XOF',
+                `Cadeau pour ${destinataire}`,
+                user.uid,
+                'achat_reloadly',
+                metadata
+            );
 
-        panier = [];
-        mettreAJourPanier();
-        cartPanel.style.display = 'none';
-        giftDetail.style.display = 'none';
-        recipientId.value = '';
-        giftReason.value = '';
-    });
+            panier = [];
+            mettreAJourPanier();
+            if (cartPanel) cartPanel.style.display = 'none';
+            if (giftDetail) giftDetail.style.display = 'none';
+            if (recipientId) recipientId.value = '';
+            if (giftReason) giftReason.value = '';
+        });
+    }
 
     // Demander un cadeau
-    generateRequestLink.addEventListener('click', () => {
-        if (!selectedProduct) return alert('Sélectionnez un produit');
-        const user = auth.currentUser;
-        if (!user) return;
+    if (generateRequestLink) {
+        generateRequestLink.addEventListener('click', () => {
+            if (!selectedProduct) return alert('Sélectionnez un produit');
+            const user = auth.currentUser;
+            if (!user) return;
 
-        const message = requestMessage.value.trim() || 'Cadeau pour moi';
-        const linkId = 'REQ_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-        
-        db.collection('demandes_cadeau').doc(linkId).set({
-            userId: user.uid,
-            productId: selectedProduct.productId,
-            productName: selectedProduct.productName,
-            message: message,
-            date: firebase.firestore.FieldValue.serverTimestamp(),
-            utilisé: false
+            const message = requestMessage ? requestMessage.value.trim() : '';
+            const linkId = 'REQ_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+            
+            db.collection('demandes_cadeau').doc(linkId).set({
+                userId: user.uid,
+                productId: selectedProduct.productId,
+                productName: selectedProduct.productName,
+                message: message,
+                date: firebase.firestore.FieldValue.serverTimestamp(),
+                utilisé: false
+            });
+
+            const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+            const fullLink = `${baseUrl}?cadeau=${linkId}`;
+            if (requestLink) requestLink.innerText = fullLink;
+            if (requestLinkContainer) requestLinkContainer.style.display = 'flex';
         });
+    }
 
-        const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-        const fullLink = `${baseUrl}?cadeau=${linkId}`;
-        requestLink.innerText = fullLink;
-        requestLinkContainer.style.display = 'flex';
-    });
-
-    copyRequestLink.addEventListener('click', () => {
-        navigator.clipboard.writeText(requestLink.innerText).then(() => {
-            alert('Lien copié !');
+    if (copyRequestLink) {
+        copyRequestLink.addEventListener('click', () => {
+            navigator.clipboard.writeText(requestLink ? requestLink.innerText : '').then(() => {
+                alert('Lien copié !');
+            });
         });
-    });
+    }
 
     // ========== Écouter l'utilisateur connecté ==========
     auth.onAuthStateChanged(async (user) => {
@@ -3594,20 +3815,23 @@
                 realBalance = data.solde || "0";
                 realID = data.idPublic || "à définir";
                 currency = (data.pays === "FR") ? "€" : (data.pays === "US") ? "$" : "FCFA";
-                balanceSpan.innerText = `${realBalance} ${currency}`;
-                idBadge.innerText = `ID: ${realID}`;
+                if (balanceSpan) balanceSpan.innerText = `${realBalance} ${currency}`;
+                if (idBadge) idBadge.innerText = `ID: ${realID}`;
 
-                document.getElementById('profileName').innerText = user.displayName || "Utilisateur";
-                document.getElementById('profileEmail').innerText = user.email || "xxxxxxxxxx";
-                if (user.photoURL) document.getElementById('profilePic').src = user.photoURL;
+                const profileName = document.getElementById('profileName');
+                const profileEmail = document.getElementById('profileEmail');
+                const profilePic = document.getElementById('profilePic');
+                if (profileName) profileName.innerText = user.displayName || "Utilisateur";
+                if (profileEmail) profileEmail.innerText = user.email || "xxxxxxxxxx";
+                if (user.photoURL && profilePic) profilePic.src = user.photoURL;
 
                 // Notifications
                 db.collection("notifications").where("userId", "==", user.uid).orderBy("timestamp", "desc").onSnapshot(snapshot => {
                     const list = document.getElementById('notificationsList');
                     const hasUnread = snapshot.docs.some(d => d.data().lu === false);
-                    notificationDot.classList.toggle('active', hasUnread);
+                    if (notificationDot) notificationDot.classList.toggle('active', hasUnread);
                     if (snapshot.empty) {
-                        list.innerHTML = `<div class="empty-notifications"><i data-lucide="bell" style="width: 40px; height: 40px; color: #ccc; margin-bottom: 10px;"></i><p>Aucune notification</p></div>`;
+                        if (list) list.innerHTML = `<div class="empty-notifications"><i data-lucide="bell" style="width: 40px; height: 40px; color: #ccc; margin-bottom: 10px;"></i><p>Aucune notification</p></div>`;
                     } else {
                         let html = '';
                         snapshot.forEach(doc => {
@@ -3615,7 +3839,7 @@
                             const statusClass = n.type === 'promo' ? 'status-promo' : n.statut === 'success' ? 'status-success' : n.statut === 'pending' ? 'status-pending' : 'status-failed';
                             html += `<div class="notification-item ${!n.lu ? 'unread' : ''}"><div class="notification-icon"><i data-lucide="${n.icone || 'bell'}"></i></div><div class="notification-content"><div class="notification-title">${n.titre || ''}</div><div>${n.message || ''}</div><div class="notification-time">${n.timestamp?.toDate().toLocaleString() || ''}</div>${n.statut ? `<span class="notification-status ${statusClass}">${n.statut}</span>` : ''}</div></div>`;
                         });
-                        list.innerHTML = html;
+                        if (list) list.innerHTML = html;
                     }
                     lucide.createIcons();
                 });
@@ -3624,7 +3848,7 @@
                 const methodsRef = userRef.collection('moyensPaiement');
                 methodsRef.onSnapshot(snapshot => {
                     if (snapshot.empty) {
-                        paymentMethodsList.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen enregistré</p>';
+                        if (paymentMethodsList) paymentMethodsList.innerHTML = '<p style="text-align:center; color:#999;">Aucun moyen enregistré</p>';
                     } else {
                         let html = '';
                         snapshot.forEach(doc => {
@@ -3634,7 +3858,7 @@
                             const maskedNum = m.numero.length > 4 ? '••••' + m.numero.slice(-4) : '••••';
                             html += `<div class="payment-method-item"><div class="payment-method-icon"><i data-lucide="${icon}"></i></div><div class="payment-method-details"><div class="payment-method-name">${typeName}</div><div class="payment-method-number">${maskedNum}</div></div></div>`;
                         });
-                        paymentMethodsList.innerHTML = html;
+                        if (paymentMethodsList) paymentMethodsList.innerHTML = html;
                         lucide.createIcons();
                     }
                     const methodsArray = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -3646,7 +3870,7 @@
                 // Historique (transactions approuvées)
                 db.collection("transactions").where("userId", "==", user.uid).where("statut", "==", "approuvé").orderBy("date", "desc").onSnapshot(snapshot => {
                     if (snapshot.empty) {
-                        historyList.innerHTML = `<div class="empty-history"><i data-lucide="clock" style="width:40px;height:40px;color:#ccc;"></i><p>Aucune transaction approuvée</p></div>`;
+                        if (historyList) historyList.innerHTML = `<div class="empty-history"><i data-lucide="clock" style="width:40px;height:40px;color:#ccc;"></i><p>Aucune transaction approuvée</p></div>`;
                     } else {
                         let html = '';
                         snapshot.forEach(doc => {
@@ -3655,7 +3879,7 @@
                             const title = tx.carteNom || 'Carte';
                             html += `<div class="history-item"><div class="history-icon"><i data-lucide="${icon}"></i></div><div class="history-details"><div class="history-title">${title}</div><div class="history-subtitle">Code: ${tx.code}</div><div class="history-amount">${tx.montantFCFA} FCFA</div><div class="history-date">${tx.date?.toDate().toLocaleString() || ''}</div></div></div>`;
                         });
-                        historyList.innerHTML = html;
+                        if (historyList) historyList.innerHTML = html;
                         lucide.createIcons();
                     }
                 });
@@ -3688,7 +3912,7 @@
                     });
 
                     if (toutesCommandes.length === 0) {
-                        ordersList.innerHTML = `<div class="empty-orders"><i data-lucide="package" style="width:40px;height:40px;color:#ccc;"></i><p>Aucune commande</p></div>`;
+                        if (ordersList) ordersList.innerHTML = `<div class="empty-orders"><i data-lucide="package" style="width:40px;height:40px;color:#ccc;"></i><p>Aucune commande</p></div>`;
                     } else {
                         let html = '';
                         toutesCommandes.forEach(item => {
@@ -3708,16 +3932,16 @@
                                 html += `<div class="order-item gift-received"><div class="order-icon"><i data-lucide="gift"></i></div><div class="order-details"><div class="order-title">🎁 Cadeau : ${item.carteNom}</div><div class="order-subtitle">De: ${item.expediteurId} - "${item.motif}"</div><div class="order-amount">${item.montant || 0} FCFA</div>${boutons}</div></div>`;
                             }
                         });
-                        ordersList.innerHTML = html;
+                        if (ordersList) ordersList.innerHTML = html;
                         lucide.createIcons();
                     }
                 }).catch(error => {
                     console.error("Erreur lors du chargement des commandes:", error);
-                    ordersList.innerHTML = '<div class="empty-orders">Erreur de chargement</div>';
+                    if (ordersList) ordersList.innerHTML = '<div class="empty-orders">Erreur de chargement</div>';
                 });
             } else {
-                balanceSpan.innerText = "0 FCFA";
-                idBadge.innerText = "ID: à définir";
+                if (balanceSpan) balanceSpan.innerText = "0 FCFA";
+                if (idBadge) idBadge.innerText = "ID: à définir";
             }
         } else {
             // Non connecté
@@ -3734,11 +3958,10 @@
             const data = doc.data();
             alert(`Code de la carte : ${data.code}`);
             await docRef.update({ codeVisible: true });
-            location.reload();
+            // Recharger la liste des commandes via les listeners Firestore, pas besoin de reload
         }
     };
 
-    // Fonction d'encaissement avec tauxRachat
     window.encaisserCadeau = async (id) => {
         const user = auth.currentUser;
         if (!user) return;
@@ -3747,28 +3970,22 @@
         const cadeau = await cadeauRef.get();
         const data = cadeau.data();
 
-        // Récupérer les infos de la carte pour le tauxRachat
         const carteSnapshot = await db.collection('cartes').where('nom', '==', data.carteNom).get();
         if (carteSnapshot.empty) {
             alert('Carte non trouvée');
             return;
         }
         const carte = carteSnapshot.docs[0].data();
-        const tauxRachat = carte.tauxRachat || 0.8; // Valeur par défaut 80%
-
-        // Calculer le montant (exemple : valeur * 600 * tauxRachat)
+        const tauxRachat = carte.tauxRachat || 0.8;
         const montantFCFA = data.valeur * 600 * tauxRachat;
 
-        // Créditer l'utilisateur
         await db.collection('utilisateurs').doc(user.uid).update({
             solde: firebase.firestore.FieldValue.increment(montantFCFA)
         });
-
-        // Marquer le cadeau comme encaissé
         await cadeauRef.update({ encaisse: true, codeVisible: true });
 
         alert(`Encaissement réussi ! +${montantFCFA} FCFA sur votre solde.`);
-        location.reload();
+        // Mise à jour dynamique du solde via le listener
     };
 
     // Système d'accordéon pour la FAQ
